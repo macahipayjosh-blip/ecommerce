@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Dashboards;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Models\Coupon;
+use App\Models\FlashSale;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\SellerApplication;
 use App\Models\UserVoucher;
 use Inertia\Inertia;
@@ -44,6 +46,30 @@ class CustomerDashboardController extends Controller
             ->whereNotIn('id', $claimedIds)
             ->get(['id', 'code', 'type', 'value', 'min_order_amount', 'valid_to', 'claim_limit', 'claimed_count']);
 
-        return Inertia::render('Dashboards/customer', compact('stats', 'recentOrders', 'isApprovedSeller', 'availableVouchers') + ['settings' => SettingsController::all()]);
+        $flashSale = FlashSale::where('active', true)
+            ->where('start_time', '<=', now())
+            ->where('end_time', '>=', now())
+            ->latest('start_time')
+            ->first();
+
+        $flashSaleProducts = collect();
+        if ($flashSale && $flashSale->applicable_products) {
+            $flashSaleProducts = Product::with(['category', 'brand', 'images'])
+                ->where('status', 'active')
+                ->whereIn('id', $flashSale->applicable_products)
+                ->take(4)
+                ->get();
+        }
+
+        $liveAuctions = Product::where('is_auction', true)
+            ->where('auction_status', 'live')
+            ->where('auction_end_at', '>=', now())
+            ->with(['images' => fn($q) => $q->where('is_primary', true)->select('id', 'product_id', 'image_path')])
+            ->withCount('bids')
+            ->latest('auction_end_at')
+            ->take(4)
+            ->get();
+
+        return Inertia::render('Dashboards/customer', compact('stats', 'recentOrders', 'isApprovedSeller', 'availableVouchers', 'flashSale', 'flashSaleProducts', 'liveAuctions') + ['settings' => SettingsController::all()]);
     }
 }

@@ -523,7 +523,7 @@ export default function AdminDashboard({
             <div className="dashboard-topbar">
                 <div>
                     <div className="dashboard-breadcrumb">
-                        <a href="#">AgriShop</a> &rsaquo; Dashboard
+                        <a href="#">BSABShop</a> &rsaquo; Dashboard
                     </div>
                     <h1 className="dashboard-heading">Dashboard</h1>
                     <p className="dashboard-subheading">Full platform control — system overview</p>

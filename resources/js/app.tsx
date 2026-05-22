@@ -4,8 +4,8 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
-import { Ziggy as ZiggyStatic } from './ziggy';
 import { initializeTheme } from './hooks/use-appearance';
+import { Ziggy as ZiggyStatic } from './ziggy';
 
 declare global {
     const route: typeof routeFn;
@@ -20,8 +20,16 @@ createInertiaApp({
         const root = createRoot(el);
         const ziggy = (window as any).Ziggy ?? ZiggyStatic;
 
-        (window as any).route = (name: string, params?: any, absolute?: boolean) =>
-            routeFn(name, params, absolute, ziggy);
+        // Avoid total React crash when a route name is missing from Ziggy.
+        // Ziggy throws; we catch and log and render using a safe fallback.
+        (window as any).route = (name: string, params?: any, absolute?: boolean) => {
+            try {
+                return routeFn(name, params, absolute, ziggy);
+            } catch (e) {
+                console.error(`Ziggy error: route '${name}' is not in the route list.`, e);
+                return '#';
+            }
+        };
 
         root.render(<App {...props} />);
     },

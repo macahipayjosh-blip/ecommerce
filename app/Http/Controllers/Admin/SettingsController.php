@@ -10,8 +10,8 @@ use Inertia\Inertia;
 class SettingsController extends Controller
 {
     public static array $defaults = [
-        'site_name'                    => 'AgriShop',
-        'site_tagline'                 => 'CPSU AgriShop',
+        'site_name'                    => 'BSABShop',
+        'site_tagline'                 => 'CPSU BSABShop',
         'banner_subtitle'              => 'Welcome to CPSU-BSAB',
         'banner_title'                 => 'BSAB Essential Deals',
         'banner_description'           => 'Start Your Farming Journey Today!',
@@ -25,13 +25,13 @@ class SettingsController extends Controller
         'flash_title'                  => 'Flash Sale',
         'categories_title'             => 'Featured Categories',
         'products_title'               => 'Latest Products',
-        'footer_brand'                 => 'CPSU AgriShop',
+        'footer_brand'                 => 'CPSU BSABShop',
         'footer_tagline'               => 'A modern e-commerce platform for CPSU-BSAB students and faculty.',
         'footer_col2_title'            => 'Quick Links',
         'footer_col3_title'            => 'Payments',
         'footer_payments'              => 'GCash,PayMaya,COD',
         'footer_col4_title'            => 'Follow Us',
-        'footer_copyright'             => '© 2025 CPSU AgriShop. All rights reserved.',
+        'footer_copyright'             => '© 2025 CPSU BSABShop. All rights reserved.',
         'footer_contact'               => 'Contact Us',
         'gcash_qr_image'               => '',
         'gcash_number'                 => '',

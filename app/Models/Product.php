@@ -27,6 +27,18 @@ class Product extends Model
         'vendor_id',
         'status',
         'taxable',
+
+        // Auction fields
+        'is_auction',
+        'reserve_price',
+        'auction_start_at',
+        'auction_end_at',
+        'automatic_extend_minutes',
+        'auction_status',
+        'breed',
+        'age',
+        'location',
+        'health_records',
     ];
 
     protected $casts = [
@@ -36,6 +48,9 @@ class Product extends Model
         'weight' => 'decimal:2',
         'dimensions' => 'array',
         'taxable' => 'boolean',
+        'auction_start_at' => 'datetime',
+        'auction_end_at' => 'datetime',
+        'health_records' => 'array',
     ];
 
     public function category()
@@ -90,6 +105,11 @@ class Product extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function bids()
+    {
+        return $this->hasMany(\App\Models\AuctionBid::class);
     }
 
     public function scopeInStock($query)

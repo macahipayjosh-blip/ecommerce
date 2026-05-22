@@ -33,6 +33,9 @@ use App\Http\Controllers\SellerApplicationController;
 Route::get('/', [\App\Http\Controllers\ProductController::class, 'welcome'])->name('home');
 
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('/auctions/{product}', [\App\Http\Controllers\AuctionController::class, 'show'])->name('auctions.show');
+Route::middleware('auth')->post('/auctions/{product}/bid', [\App\Http\Controllers\AuctionController::class, 'placeBid'])->name('auctions.bid');
+Route::get('/auctions/{product}/bid', fn($product) => redirect()->route('auctions.show', $product));
 
 Route::middleware('auth')->group(function () {
 
@@ -83,6 +86,7 @@ Route::middleware('auth')->group(function () {
         Route::post('orders/{order}/review', [CustomerOrderController::class, 'storeReview'])->name('orders.review');
         Route::get('orders/{order}/invoice', [CustomerOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('orders/{order}/message', [CustomerOrderController::class, 'sendMessage'])->name('orders.message');
+        Route::post('auctions/{product}/bid', [\App\Http\Controllers\AuctionController::class, 'placeBid'])->name('auctions.bid');
         Route::get('profile', [CustomerProfileController::class, 'index'])->name('profile.index');
         Route::patch('profile', [CustomerProfileController::class, 'update'])->name('profile.patch');
         Route::get('wishlist', [CustomerProfileController::class, 'wishlist'])->name('wishlist');
@@ -101,6 +105,13 @@ Route::middleware('auth')->group(function () {
         // Products
         Route::get('products', [ProductManagementController::class, 'index'])->name('products.index');
         Route::get('products/create', [ProductManagementController::class, 'create'])->name('products.create');
+        Route::get('auctions', [\App\Http\Controllers\Seller\AuctionController::class, 'index'])->name('auctions.index');
+        Route::get('auctions/create', [\App\Http\Controllers\Seller\AuctionController::class, 'create'])->name('auctions.create');
+        Route::post('auctions', [\App\Http\Controllers\Seller\AuctionController::class, 'store'])->name('auctions.store');
+        Route::get('auctions/{auction}', [\App\Http\Controllers\Seller\AuctionController::class, 'show'])->name('auctions.show');
+        Route::get('auctions/{auction}/edit', [\App\Http\Controllers\Seller\AuctionController::class, 'edit'])->name('auctions.edit');
+        Route::put('auctions/{auction}', [\App\Http\Controllers\Seller\AuctionController::class, 'update'])->name('auctions.update');
+        Route::delete('auctions/{auction}', [\App\Http\Controllers\Seller\AuctionController::class, 'destroy'])->name('auctions.destroy');
         Route::post('products', [ProductManagementController::class, 'store'])->name('products.store');
         Route::get('products/{product}', [ProductManagementController::class, 'show'])->name('products.show');
         Route::get('products/{product}/edit', [ProductManagementController::class, 'edit'])->name('products.edit');
@@ -166,6 +177,12 @@ Route::middleware('auth')->group(function () {
         Route::get('products/{product}/show', [ProductController::class, 'adminShow'])->name('products.show');
         Route::resource('products', ProductController::class)->except(['index', 'show']);
         Route::delete('products/{product}/images/{image}', [ProductController::class, 'destroyImage'])->name('products.images.destroy');
+
+        // Auctions
+        Route::get('auctions', [\App\Http\Controllers\Admin\AuctionManagementController::class, 'index'])->name('auctions.index');
+        Route::get('auctions/{product}', [\App\Http\Controllers\Admin\AuctionManagementController::class, 'show'])->name('auctions.show');
+        Route::patch('auctions/{product}', [\App\Http\Controllers\Admin\AuctionManagementController::class, 'update'])->name('auctions.update');
+        Route::delete('auctions/{product}', [\App\Http\Controllers\Admin\AuctionManagementController::class, 'destroy'])->name('auctions.destroy');
 
         // Categories
         Route::resource('categories', CategoryController::class);

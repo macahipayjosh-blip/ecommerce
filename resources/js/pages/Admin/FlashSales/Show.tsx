@@ -45,21 +45,9 @@ const getStatus = (fs: FlashSale) => {
 const formatDiscount = (fs: FlashSale) => (fs.discount_type === 'percentage' ? `${fs.discount_value}%` : `₱${fs.discount_value}`);
 
 const Field = ({ label, value }: { label: string; value?: string | null }) => (
-    <div style={{ display: 'flex', gap: 8, fontSize: 13, marginBottom: 6 }}>
-        <span
-            style={{
-                color: 'var(--text-muted)',
-                width: 160,
-                flexShrink: 0,
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-            }}
-        >
-            {label}
-        </span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{value || '—'}</span>
+    <div className="field-row">
+        <span className="field-label">{label}</span>
+        <span className="field-value">{value || '—'}</span>
     </div>
 );
 
@@ -75,18 +63,7 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
             {/* Page Header */}
             <div className="pg-header">
                 <div>
-                    <Link
-                        href={route('admin.flash-sales.index')}
-                        style={{
-                            fontSize: 13,
-                            color: 'var(--text-muted)',
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            marginBottom: 6,
-                        }}
-                    >
+                    <Link href={route('admin.flash-sales.index')} className="breadcrumb-link">
                         ← Back to Flash Sales
                     </Link>
                     <div className="pg-title">{flashSale.title}</div>
@@ -94,7 +71,7 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
                         {startDate} to {endDate}
                     </div>
                 </div>
-                <span className={`badge ${STATUS_BADGE[status] ?? 'badge-gray'}`} style={{ fontSize: 13, padding: '6px 14px' }}>
+                <span className={`badge ${STATUS_BADGE[status] ?? 'badge-gray'} status-badge-header`}>
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>
             </div>
@@ -114,16 +91,14 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
                     <div key={s.label} className="stat-card">
                         <div className="stat-icon">{s.icon}</div>
                         <div className="stat-label">{s.label}</div>
-                        <div className="stat-value" style={{ fontSize: 14 }}>
-                            {s.value}
-                        </div>
+                        <div className="stat-value stat-value-sm">{s.value}</div>
                     </div>
                 ))}
             </div>
 
             <div className="grid-2">
                 {/* Left Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div className="grid-column">
                     {/* Flash Sale Details */}
                     <div className="card">
                         <div className="card-header">
@@ -141,7 +116,7 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
                 </div>
 
                 {/* Right Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div className="grid-column">
                     {/* Metadata */}
                     <div className="card">
                         <div className="card-header">
@@ -154,32 +129,9 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
                                 ['Created By', flashSale.creator?.name],
                                 ['Created At', new Date(flashSale.start_time).toLocaleString()],
                             ].map(([label, value]) => (
-                                <div
-                                    key={label as string}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '11px 20px',
-                                        borderBottom: '1px solid var(--border)',
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.07em',
-                                            color: 'var(--text-muted)',
-                                        }}
-                                    >
-                                        {label as string}
-                                    </span>
-                                    <span
-                                        style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'right', maxWidth: '60%' }}
-                                    >
-                                        {value as string}
-                                    </span>
+                                <div key={label as string} className="metadata-row">
+                                    <span className="metadata-label">{label as string}</span>
+                                    <span className="metadata-value">{value as string}</span>
                                 </div>
                             ))}
                         </div>
@@ -194,21 +146,13 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
                             {flashSale.products && flashSale.products.length > 0 ? (
                                 <div>
                                     {flashSale.products.map((product) => (
-                                        <div
-                                            key={product.id}
-                                            style={{
-                                                padding: '8px 0',
-                                                borderBottom: '1px solid var(--border)',
-                                                fontSize: 13,
-                                                color: 'var(--text-primary)',
-                                            }}
-                                        >
+                                        <div key={product.id} className="product-item">
                                             {product.name}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <span style={{ color: 'var(--text-muted)' }}>Applies to all products</span>
+                                <span className="text-muted">Applies to all products</span>
                             )}
                         </div>
                     </div>
@@ -216,7 +160,7 @@ export default function FlashSaleShow({ flashSale }: { flashSale: FlashSale }) {
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+            <div className="action-buttons">
                 <Link href={route('admin.flash-sales.edit', flashSale.id)} className="btn btn-primary">
                     ✏️ Edit Flash Sale
                 </Link>

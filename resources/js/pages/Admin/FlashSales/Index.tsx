@@ -76,7 +76,7 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
             </div>
 
             {/* Actions */}
-            <div style={{ marginBottom: 24 }}>
+            <div className="mb-6">
                 <Link href={route('admin.flash-sales.create')} className="btn btn-primary">
                     + New Flash Sale
                 </Link>
@@ -101,31 +101,22 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                                 flashSales.data.map((fs) => (
                                     <tr key={fs.id}>
                                         <td>
-                                            <div style={{ fontWeight: 600, color: '#1a2e1a' }}>{fs.title}</div>
+                                            <div className="text-primary font-semibold">{fs.title}</div>
                                         </td>
-                                        <td style={{ color: '#374151' }}>{formatDiscount(fs)}</td>
-                                        <td style={{ fontSize: 12, color: '#6b7280' }}>
+                                        <td className="text-secondary">{formatDiscount(fs)}</td>
+                                        <td className="text-muted text-sm">
                                             {new Date(fs.start_time).toLocaleDateString('en-GB')} -{' '}
                                             {new Date(fs.end_time).toLocaleDateString('en-GB')}
                                         </td>
                                         <td>
                                             <span className={`badge ${STATUS_BADGE[getStatus(fs)] ?? 'badge-gray'}`}>
-                                                <span
-                                                    style={{
-                                                        width: 6,
-                                                        height: 6,
-                                                        borderRadius: '50%',
-                                                        background: 'currentColor',
-                                                        display: 'inline-block',
-                                                        marginRight: 6,
-                                                    }}
-                                                />
+                                                <span className="badge-dot" />
                                                 {getStatus(fs).charAt(0).toUpperCase() + getStatus(fs).slice(1)}
                                             </span>
                                         </td>
-                                        <td style={{ fontSize: 12, color: '#6b7280' }}>{fs.creator?.name}</td>
+                                        <td className="text-muted text-sm">{fs.creator?.name}</td>
                                         <td>
-                                            <div style={{ display: 'flex', gap: 8 }}>
+                                            <div className="flex gap-2">
                                                 <Link href={route('admin.flash-sales.show', fs.id)} className="btn btn-secondary btn-sm">
                                                     <Eye size={13} /> View
                                                 </Link>
@@ -139,10 +130,10 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(fs.id)}
-                                                    className="btn btn-secondary btn-sm"
-                                                    style={{ color: '#dc2626' }}
+                                                    className="btn btn-danger btn-sm"
+                                                    title="Delete flash sale"
                                                 >
-                                                    <Trash2 size={13} />
+                                                    <Trash2 size={13} /> Delete
                                                 </button>
                                             </div>
                                         </td>

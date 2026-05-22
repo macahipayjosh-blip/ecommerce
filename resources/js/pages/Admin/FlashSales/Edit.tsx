@@ -1,6 +1,6 @@
+import AdminLayout from '@/layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEvent } from 'react';
-import AdminLayout from '@/layouts/AdminLayout';
 
 interface FlashSale {
     id: number;
@@ -40,7 +40,10 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
     const handleProductToggle = (productId: string) => {
         const currentProducts = data.applicable_products || [];
         if (currentProducts.includes(productId)) {
-            setData('applicable_products', currentProducts.filter(id => id !== productId));
+            setData(
+                'applicable_products',
+                currentProducts.filter((id) => id !== productId),
+            );
         } else {
             setData('applicable_products', [...currentProducts, productId]);
         }
@@ -53,7 +56,7 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
             {/* Page Header */}
             <div className="pg-header">
                 <div>
-                    <Link href={route('admin.flash-sales.index')} style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                    <Link href={route('admin.flash-sales.index')} className="breadcrumb-link">
                         ← Back to Flash Sales
                     </Link>
                     <div className="pg-title">Edit Flash Sale</div>
@@ -61,48 +64,38 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 24 }}>
+            <form onSubmit={handleSubmit} className="form-grid">
                 {/* Basic Info */}
                 <div className="card">
                     <div className="card-header">
                         <span className="card-title">Flash Sale Details</span>
                     </div>
-                    <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+                    <div className="card-body form-card-body">
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-                                Title <span style={{ color: '#ef4444' }}>*</span>
+                            <label htmlFor="title" className="form-label">
+                                Title <span className="form-required">*</span>
                             </label>
                             <input
+                                id="title"
                                 type="text"
                                 value={data.title}
                                 onChange={(e) => setData('title', e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    border: `1px solid ${errors.title ? '#ef4444' : 'var(--border)'}`,
-                                    borderRadius: '6px',
-                                    fontSize: 13,
-                                }}
+                                className={`form-input${errors.title ? 'error' : ''}`}
                                 placeholder="Black Friday Sale"
                                 required
                             />
-                            {errors.title && <p style={{ marginTop: 4, fontSize: 12, color: '#ef4444' }}>{errors.title}</p>}
+                            {errors.title && <p className="form-error">{errors.title}</p>}
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-                                Discount Type <span style={{ color: '#ef4444' }}>*</span>
+                            <label htmlFor="discount_type" className="form-label">
+                                Discount Type <span className="form-required">*</span>
                             </label>
                             <select
+                                id="discount_type"
                                 value={data.discount_type}
                                 onChange={(e) => setData('discount_type', e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    fontSize: 13,
-                                }}
+                                className="form-input"
                             >
                                 <option value="percentage">Percentage (%)</option>
                                 <option value="fixed">Fixed Amount (₱)</option>
@@ -110,77 +103,62 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-                                Discount Value <span style={{ color: '#ef4444' }}>*</span>
+                            <label htmlFor="discount_value" className="form-label">
+                                Discount Value <span className="form-required">*</span>
                             </label>
                             <input
+                                id="discount_value"
                                 type="number"
                                 value={data.discount_value}
                                 onChange={(e) => setData('discount_value', e.target.value)}
                                 min="0"
                                 step="0.01"
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    border: `1px solid ${errors.discount_value ? '#ef4444' : 'var(--border)'}`,
-                                    borderRadius: '6px',
-                                    fontSize: 13,
-                                }}
+                                className={`form-input${errors.discount_value ? 'error' : ''}`}
                                 placeholder={data.discount_type === 'percentage' ? '20' : '100.00'}
                                 required
                             />
-                            {errors.discount_value && <p style={{ marginTop: 4, fontSize: 12, color: '#ef4444' }}>{errors.discount_value}</p>}
+                            {errors.discount_value && <p className="form-error">{errors.discount_value}</p>}
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-                                Start Time <span style={{ color: '#ef4444' }}>*</span>
+                            <label htmlFor="start_time" className="form-label">
+                                Start Time <span className="form-required">*</span>
                             </label>
                             <input
+                                id="start_time"
                                 type="datetime-local"
                                 value={data.start_time}
                                 onChange={(e) => setData('start_time', e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    border: `1px solid ${errors.start_time ? '#ef4444' : 'var(--border)'}`,
-                                    borderRadius: '6px',
-                                    fontSize: 13,
-                                }}
+                                className={`form-input${errors.start_time ? 'error' : ''}`}
                                 required
                             />
-                            {errors.start_time && <p style={{ marginTop: 4, fontSize: 12, color: '#ef4444' }}>{errors.start_time}</p>}
+                            {errors.start_time && <p className="form-error">{errors.start_time}</p>}
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-                                End Time <span style={{ color: '#ef4444' }}>*</span>
+                            <label htmlFor="end_time" className="form-label">
+                                End Time <span className="form-required">*</span>
                             </label>
                             <input
+                                id="end_time"
                                 type="datetime-local"
                                 value={data.end_time}
                                 onChange={(e) => setData('end_time', e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    border: `1px solid ${errors.end_time ? '#ef4444' : 'var(--border)'}`,
-                                    borderRadius: '6px',
-                                    fontSize: 13,
-                                }}
+                                className={`form-input${errors.end_time ? 'error' : ''}`}
                                 required
                             />
-                            {errors.end_time && <p style={{ marginTop: 4, fontSize: 12, color: '#ef4444' }}>{errors.end_time}</p>}
+                            {errors.end_time && <p className="form-error">{errors.end_time}</p>}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="form-checkbox-row">
                             <input
                                 type="checkbox"
                                 id="active"
                                 checked={data.active}
                                 onChange={(e) => setData('active', e.target.checked)}
-                                style={{ cursor: 'pointer', width: 18, height: 18 }}
+                                className="form-checkbox"
                             />
-                            <label htmlFor="active" style={{ fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                            <label htmlFor="active" className="form-label form-checkbox-label">
                                 Active
                             </label>
                         </div>
@@ -193,18 +171,15 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
                         <span className="card-title">Description</span>
                     </div>
                     <div className="card-body">
+                        <label htmlFor="description" className="form-label">
+                            Description
+                        </label>
                         <textarea
+                            id="description"
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             rows={4}
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                border: '1px solid var(--border)',
-                                borderRadius: '6px',
-                                fontSize: 13,
-                                fontFamily: 'inherit',
-                            }}
+                            className="form-textarea"
                             placeholder="Optional description for this flash sale"
                         />
                     </div>
@@ -216,15 +191,15 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
                         <span className="card-title">Applicable Products</span>
                     </div>
                     <div className="card-body">
-                        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select specific products. Leave empty to apply to all.</p>
-                        <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 6, padding: 12 }}>
+                        <p className="form-help-text">Select specific products. Leave empty to apply to all.</p>
+                        <div className="product-checkbox-list">
                             {products.map((product) => (
-                                <label key={product.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 0', fontSize: 13, cursor: 'pointer' }}>
+                                <label key={product.id} className="product-checkbox-item">
                                     <input
                                         type="checkbox"
                                         checked={data.applicable_products?.includes(product.id.toString()) || false}
                                         onChange={() => handleProductToggle(product.id.toString())}
-                                        style={{ marginRight: 8, cursor: 'pointer', width: 16, height: 16 }}
+                                        className="form-checkbox"
                                     />
                                     {product.name}
                                 </label>
@@ -234,16 +209,11 @@ export default function FlashSaleEdit({ flashSale, products }: { flashSale: Flas
                 </div>
 
                 {/* Submit */}
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <div className="form-actions">
                     <Link href={route('admin.flash-sales.index')} className="btn btn-secondary">
                         Cancel
                     </Link>
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="btn btn-primary"
-                        style={{ opacity: processing ? 0.5 : 1 }}
-                    >
+                    <button type="submit" disabled={processing} className={`btn btn-primary${processing ? 'btn-disabled' : ''}`}>
                         {processing ? 'Updating...' : '✏️ Update Flash Sale'}
                     </button>
                 </div>

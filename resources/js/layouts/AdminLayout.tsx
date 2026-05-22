@@ -4,6 +4,7 @@ import {
     ClipboardList,
     CreditCard,
     Folder,
+    Gavel,
     LayoutDashboard,
     Package,
     RotateCcw,
@@ -35,6 +36,7 @@ const NAV = [
         label: 'Commerce',
         items: [
             { name: 'Products', routeName: 'admin.products.index', icon: <Package size={15} /> },
+            { name: 'Auctions', routeName: 'admin.auctions.index', icon: <Gavel size={15} /> },
             { name: 'Categories', routeName: 'admin.categories.index', icon: <Folder size={15} /> },
             { name: 'Brands', routeName: 'admin.brands.index', icon: <Tag size={15} /> },
             { name: 'Orders', routeName: 'admin.orders.index', icon: <ShoppingCart size={15} /> },

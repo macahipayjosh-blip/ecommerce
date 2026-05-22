@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
 use App\Models\ProductImage;
+use App\Models\FlashSale;
 use App\Http\Controllers\Admin\SettingsController;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -17,12 +18,39 @@ class ProductController extends Controller
     {
         $products = Product::with(['category', 'brand', 'images'])
             ->where('status', 'active')
+            ->where('is_auction', false)
             ->latest()
             ->take(6)
             ->get();
+
         $categories = Category::select('id', 'name', 'image')->get();
         $settings = SettingsController::all();
-        return Inertia::render('welcome', compact('products', 'categories', 'settings'));
+
+        $flashSale = FlashSale::where('active', true)
+            ->where('start_time', '<=', now())
+            ->where('end_time', '>=', now())
+            ->latest('start_time')
+            ->first();
+
+        $flashSaleProducts = collect();
+        if ($flashSale && $flashSale->applicable_products) {
+            $flashSaleProducts = Product::with(['category', 'brand', 'images'])
+                ->where('status', 'active')
+                ->whereIn('id', $flashSale->applicable_products)
+                ->take(4)
+                ->get();
+        }
+
+        $liveAuctions = Product::where('is_auction', true)
+            ->whereIn('auction_status', ['live', 'pending'])
+            ->where('auction_end_at', '>=', now())
+            ->with(['images' => fn($q) => $q->where('is_primary', true)->select('id', 'product_id', 'image_path')])
+            ->withCount('bids')
+            ->latest('auction_end_at')
+            ->take(4)
+            ->get();
+
+        return Inertia::render('welcome', compact('products', 'categories', 'settings', 'flashSale', 'flashSaleProducts', 'liveAuctions'));
     }
 
     public function index(Request $request)
@@ -114,6 +142,11 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->load(['category', 'brand', 'seller', 'images', 'reviews.user']);
+
+        // Load auction bids when product is an auction
+        if ($product->is_auction) {
+            $product->load(['bids.user']);
+        }
 
         $inWishlist = false;
         if ($user = auth()->user()) {

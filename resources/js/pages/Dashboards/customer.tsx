@@ -1,22 +1,6 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import {
-    CheckCircle,
-    Clock,
-    CreditCard,
-    Gift,
-    Leaf,
-    Menu,
-    Package,
-    ShoppingBag,
-    ShoppingCart,
-    Store,
-    Tag,
-    Truck,
-    User,
-    X,
-} from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { CheckCircle, Clock, CreditCard, Gift, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, Store, Tag, Truck, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { router } from '@inertiajs/react';
 
 interface Stats {
     totalOrders: number;
@@ -24,6 +8,26 @@ interface Stats {
     totalSpent: number;
     loyaltyPoints: number;
 }
+
+interface Product {
+    id: number;
+    name: string;
+    price: string;
+    category?: { id: number; name: string };
+    images?: { image_path: string; is_primary: boolean }[];
+}
+
+interface FlashSale {
+    id: number;
+    title: string;
+    description?: string;
+    discount_type: 'percentage' | 'fixed';
+    discount_value: string | number;
+    start_time: string;
+    end_time: string;
+    active: boolean;
+}
+
 interface OrderItem {
     id: number;
     product?: {
@@ -40,6 +44,18 @@ interface Order {
     created_at: string;
 }
 
+interface Auction {
+    id: number;
+    name: string;
+    reserve_price: string;
+    auction_end_at: string;
+    auction_status: string;
+    breed: string;
+    age: string;
+    bids_count: number;
+    images?: { image_path: string; is_primary: boolean }[];
+}
+
 interface Voucher {
     id: number;
     code: string;
@@ -51,19 +67,52 @@ interface Voucher {
     claimed_count: number;
 }
 
-export default function CustomerDashboard({ stats, recentOrders, isApprovedSeller, settings, availableVouchers }: {
+function Countdown({ endTime }: { endTime: string }) {
+    const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((new Date(endTime).getTime() - Date.now()) / 1000)));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSecondsLeft((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const hours = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
+    const seconds = String(secondsLeft % 60).padStart(2, '0');
+
+    return (
+        <span className="font-mono font-bold">
+            {hours}:{minutes}:{seconds}
+        </span>
+    );
+}
+
+export default function CustomerDashboard({
+    stats,
+    recentOrders,
+    isApprovedSeller,
+    settings,
+    availableVouchers,
+    flashSale,
+    flashSaleProducts,
+    liveAuctions,
+}: {
     stats: Stats;
     recentOrders: Order[];
     isApprovedSeller: boolean;
     settings: Record<string, string>;
     availableVouchers: Voucher[];
+    flashSale?: FlashSale | null;
+    flashSaleProducts?: Product[];
+    liveAuctions?: Auction[];
 }) {
-    const [sidebarOpen, setSidebarOpen]   = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [switching, setSwitching]       = useState(false);
+    const [switching, setSwitching] = useState(false);
     const [voucherPopup, setVoucherPopup] = useState(false);
-    const [claiming, setClaiming]         = useState<number | null>(null);
-    const [claimedIds, setClaimedIds]     = useState<number[]>([]);
+    const [claiming, setClaiming] = useState<number | null>(null);
+    const [claimedIds, setClaimedIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (availableVouchers.length > 0) {
@@ -74,14 +123,18 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
 
     const claim = (id: number) => {
         setClaiming(id);
-        router.post(route('customer.vouchers.claim'), { coupon_id: id }, {
-            preserveScroll: true,
-            onSuccess: () => setClaimedIds(prev => [...prev, id]),
-            onFinish: () => setClaiming(null),
-        });
+        router.post(
+            route('customer.vouchers.claim'),
+            { coupon_id: id },
+            {
+                preserveScroll: true,
+                onSuccess: () => setClaimedIds((prev) => [...prev, id]),
+                onFinish: () => setClaiming(null),
+            },
+        );
     };
 
-    const visibleVouchers = availableVouchers.filter(v => !claimedIds.includes(v.id));
+    const visibleVouchers = availableVouchers.filter((v) => !claimedIds.includes(v.id));
 
     const s = settings ?? {};
     const dashBg = s.banner_image ? `/storage/${s.banner_image}` : null;
@@ -92,11 +145,11 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
     };
 
     const navLinks = [
-        { label: 'Dashboard',  href: route('dashboard') },
-        { label: 'Products',   href: route('customer.products.index') },
-        { label: 'My Orders',  href: route('customer.orders.index') },
-        { label: 'Favorites',  href: route('customer.wishlist') },
-        { label: 'Addresses',  href: route('customer.addresses') },
+        { label: 'Dashboard', href: route('dashboard') },
+        { label: 'Products', href: route('customer.products.index') },
+        { label: 'My Orders', href: route('customer.orders.index') },
+        { label: 'Favorites', href: route('customer.wishlist') },
+        { label: 'Addresses', href: route('customer.addresses') },
     ];
 
     const statusColor: Record<string, string> = {
@@ -134,7 +187,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
 
                         <Link href={route('home')} className="flex shrink-0 items-center gap-2">
                             <Leaf className="h-7 w-7 text-[#2d6a2d] sm:h-8 sm:w-8" />
-                            <span className="text-base font-bold text-[#2d6a2d] sm:text-xl">AgriShop</span>
+                            <span className="text-base font-bold text-[#2d6a2d] sm:text-xl">BSABShop</span>
                         </Link>
 
                         {/* Nav links — desktop only */}
@@ -175,7 +228,10 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                             <div className="my-1 border-t border-gray-100" />
                                             {isApprovedSeller ? (
                                                 <button
-                                                    onClick={() => { setDropdownOpen(false); switchToSeller(); }}
+                                                    onClick={() => {
+                                                        setDropdownOpen(false);
+                                                        switchToSeller();
+                                                    }}
                                                     disabled={switching}
                                                     className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-[#2d6a2d] hover:bg-[#e8f5e9] disabled:opacity-50"
                                                 >
@@ -219,7 +275,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                     <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                         <div className="flex items-center gap-2">
                             <Leaf className="h-7 w-7 text-[#2d6a2d]" />
-                            <span className="text-lg font-bold text-[#2d6a2d]">AgriShop</span>
+                            <span className="text-lg font-bold text-[#2d6a2d]">BSABShop</span>
                         </div>
                         <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100">
                             <X className="h-5 w-5" />
@@ -290,20 +346,19 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                 <div className="mx-auto max-w-6xl space-y-5 px-3 py-4 sm:space-y-8 sm:px-4 sm:py-6">
                     {/* Hero Banner */}
                     <div
-                        className="relative flex items-center overflow-hidden rounded-2xl p-5 text-white sm:p-8"
-                        style={dashBg
-                            ? { backgroundImage: `url(${dashBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                            : { background: 'linear-gradient(to right, #1a4d1a, #2d6a2d, #4a9e4a)' }
+                        className="relative flex items-center overflow-hidden rounded-2xl p-5 text-white sm:p-8 min-h-[400px] "
+                        style={
+                            dashBg
+                                ? { backgroundImage: `url(${dashBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                                : { background: 'linear-gradient(to right, #1a4d1a, #2d6a2d, #4a9e4a)' }
                         }
                     >
                         {dashBg && <div className="absolute inset-0 bg-black/40" />}
-                        <div className="relative z-10">
+                        <div className="relative z-10  ">
                             <p className="mb-1 text-xs font-medium tracking-wider text-green-200 uppercase sm:text-sm">
                                 {s.dashboard_banner_subtitle || 'Welcome back'}
                             </p>
-                            <h1 className="mb-1 text-xl font-bold sm:mb-2 sm:text-3xl">
-                                {s.dashboard_banner_title || 'My Dashboard'}
-                            </h1>
+                            <h1 className="mb-1 text-xl font-bold sm:mb-2 sm:text-3xl">{s.dashboard_banner_title || 'My Dashboard'}</h1>
                             <p className="mb-4 text-sm text-green-100 sm:mb-5">
                                 {s.dashboard_banner_description || 'Track your orders, favorites, and more.'}
                             </p>
@@ -359,6 +414,104 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                         ))}
                     </div>
 
+                    {/* Flash Sale */}
+                    {flashSale && flashSaleProducts && flashSaleProducts.length > 0 ? (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="mb-4 flex flex-col gap-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">⚡</span>
+                                        <h2 className="text-base font-bold text-gray-800 sm:text-lg">{flashSale.title || 'Flash Sale'}</h2>
+                                    </div>
+                                    {flashSale.description && <p className="text-xs text-gray-600 sm:text-sm">{flashSale.description}</p>}
+                                </div>
+                                <div className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-xs whitespace-nowrap text-red-600 sm:text-sm">
+                                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    Ends in <Countdown endTime={flashSale.end_time} />
+                                    <span className="ml-1 rounded-full bg-white/50 px-2 py-0.5 text-xs font-bold text-red-700">
+                                        {flashSale.discount_type === 'percentage'
+                                            ? `-${Number(flashSale.discount_value)}%`
+                                            : `-₱${Number(flashSale.discount_value).toFixed(0)}`}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {flashSaleProducts.map((p) => {
+                                    const img = p.images?.find((i) => i.is_primary) ?? p.images?.[0];
+                                    return (
+                                        <Link
+                                            key={p.id}
+                                            href={route('customer.products.show', p.id)}
+                                            className="overflow-hidden rounded-lg border border-gray-100 transition-shadow hover:shadow-md"
+                                        >
+                                            <div className="flex h-24 items-center justify-center overflow-hidden bg-gray-50 sm:h-28">
+                                                {img ? (
+                                                    <img src={`/storage/${img.image_path}`} alt={p.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <Package className="h-8 w-8 text-gray-200" />
+                                                )}
+                                            </div>
+                                            <div className="p-2 sm:p-2.5">
+                                                <p className="truncate text-xs font-medium text-gray-700 sm:text-sm">{p.name}</p>
+                                                <p className="text-xs font-bold text-[#2d6a2d] sm:text-sm">₱{parseFloat(p.price).toFixed(2)}</p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {/* Live Auctions */}
+                    {liveAuctions && liveAuctions.length > 0 && (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="mb-4 flex items-center justify-between sm:mb-5">
+                                <div className="flex items-center gap-2">
+                                    <Gavel className="h-5 w-5 text-[#2d6a2d]" />
+                                    <h2 className="text-base font-bold text-gray-800 sm:text-lg">Live Auctions</h2>
+                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 animate-pulse">LIVE</span>
+                                </div>
+                                <Link href={route('auctions.show', liveAuctions[0].id)} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
+                                    View all →
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {liveAuctions.map((auction) => {
+                                    const img = auction.images?.find((i) => i.is_primary) ?? auction.images?.[0];
+                                    const endsIn = Math.max(0, Math.floor((new Date(auction.auction_end_at).getTime() - Date.now()) / 1000));
+                                    const h = String(Math.floor(endsIn / 3600)).padStart(2, '0');
+                                    const m = String(Math.floor((endsIn % 3600) / 60)).padStart(2, '0');
+                                    return (
+                                        <Link
+                                            key={auction.id}
+                                            href={route('auctions.show', auction.id)}
+                                            className="overflow-hidden rounded-xl border border-gray-100 transition-shadow hover:shadow-md"
+                                        >
+                                            <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gray-50 sm:h-32">
+                                                {img ? (
+                                                    <img src={`/storage/${img.image_path}`} alt={auction.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <Gavel className="h-8 w-8 text-gray-200" />
+                                                )}
+                                                <span className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">
+                                                    {h}:{m} left
+                                                </span>
+                                            </div>
+                                            <div className="p-2 sm:p-2.5">
+                                                <p className="truncate text-xs font-semibold text-gray-800 sm:text-sm">{auction.name}</p>
+                                                <p className="text-[10px] text-gray-400">{auction.breed} • {auction.age}</p>
+                                                <div className="mt-1 flex items-center justify-between">
+                                                    <p className="text-xs font-bold text-[#2d6a2d]">₱{parseFloat(auction.reserve_price).toFixed(2)}</p>
+                                                    <span className="text-[10px] text-gray-400">{auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Recent Orders */}
                     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
                         <div className="mb-4 flex items-center justify-between sm:mb-5">
@@ -392,7 +545,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                                 })()}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="truncate font-medium text-gray-900 text-sm">Order #{order.order_number}</p>
+                                                <p className="truncate text-sm font-medium text-gray-900">Order #{order.order_number}</p>
                                                 <p className="text-xs text-gray-500">
                                                     {order.items?.length ?? 0} items • {new Date(order.created_at).toLocaleDateString()}
                                                 </p>
@@ -406,7 +559,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                                                 {statusIcon[order.status]}
                                                 <span className="capitalize">{order.status}</span>
                                             </span>
-                                            <span className="font-bold text-[#2d6a2d] text-sm">₱{Number(order.total).toFixed(2)}</span>
+                                            <span className="text-sm font-bold text-[#2d6a2d]">₱{Number(order.total).toFixed(2)}</span>
                                             <Link
                                                 href={route('customer.orders.show', order.id)}
                                                 className="rounded-lg bg-[#2d6a2d] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#245724]"
@@ -432,97 +585,100 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                     </div>
                 </div>
 
-
-
-            {/* Floating Voucher Widget */}
-            {visibleVouchers.length > 0 && (
-                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-
-                    {/* Slide-up panel */}
-                    <div
-                        style={{
-                            transition: 'transform 0.3s ease, opacity 0.3s ease',
-                            transform: voucherPopup ? 'translateY(0)' : 'translateY(16px)',
-                            opacity: voucherPopup ? 1 : 0,
-                            pointerEvents: voucherPopup ? 'auto' : 'none',
-                        }}
-                        className="w-80 rounded-2xl bg-white shadow-2xl overflow-hidden border border-gray-100"
-                    >
-                        {/* Panel header */}
-                        <div className="bg-gradient-to-r from-[#1a4d1a] to-[#2d6a2d] px-4 py-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Tag className="h-4 w-4 text-white" />
-                                <span className="text-sm font-bold text-white">Vouchers for you</span>
-                                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white">{visibleVouchers.length}</span>
-                            </div>
-                            <button onClick={() => setVoucherPopup(false)} className="text-white/70 hover:text-white transition-colors">
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        {/* Voucher rows */}
-                        <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-                            {visibleVouchers.map(v => (
-                                <div key={v.id} className="flex items-center gap-3 px-4 py-3">
-                                    <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#e8f5e9] text-[#2d6a2d]">
-                                        <span className="text-sm font-extrabold leading-none">
-                                            {v.type === 'percentage' ? `${v.value}%` : `₱${Number(v.value).toFixed(0)}`}
-                                        </span>
-                                        <span className="text-[8px] font-bold uppercase tracking-wide">OFF</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-xs text-gray-900 tracking-wider">{v.code}</p>
-                                        {v.min_order_amount && (
-                                            <p className="text-[10px] text-gray-400">Min. ₱{Number(v.min_order_amount).toFixed(0)}</p>
-                                        )}
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            {v.valid_to && (
-                                                <span className="text-[10px] text-gray-400">Exp. {new Date(v.valid_to).toLocaleDateString()}</span>
-                                            )}
-                                            {v.claim_limit && (
-                                                <span className="text-[10px] font-semibold text-amber-500">{v.claim_limit - v.claimed_count} left</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => claim(v.id)}
-                                        disabled={claiming === v.id}
-                                        className="shrink-0 rounded-lg bg-[#2d6a2d] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#245724] disabled:opacity-60 transition-colors"
-                                    >
-                                        {claiming === v.id ? '...' : 'Claim'}
-                                    </button>
+                {/* Floating Voucher Widget */}
+                {visibleVouchers.length > 0 && (
+                    <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
+                        {/* Slide-up panel */}
+                        <div
+                            style={{
+                                transition: 'transform 0.3s ease, opacity 0.3s ease',
+                                transform: voucherPopup ? 'translateY(0)' : 'translateY(16px)',
+                                opacity: voucherPopup ? 1 : 0,
+                                pointerEvents: voucherPopup ? 'auto' : 'none',
+                            }}
+                            className="w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
+                        >
+                            {/* Panel header */}
+                            <div className="flex items-center justify-between bg-gradient-to-r from-[#1a4d1a] to-[#2d6a2d] px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <Tag className="h-4 w-4 text-white" />
+                                    <span className="text-sm font-bold text-white">Vouchers for you</span>
+                                    <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                        {visibleVouchers.length}
+                                    </span>
                                 </div>
-                            ))}
+                                <button onClick={() => setVoucherPopup(false)} className="text-white/70 transition-colors hover:text-white">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {/* Voucher rows */}
+                            <div className="max-h-64 divide-y divide-gray-100 overflow-y-auto">
+                                {visibleVouchers.map((v) => (
+                                    <div key={v.id} className="flex items-center gap-3 px-4 py-3">
+                                        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#e8f5e9] text-[#2d6a2d]">
+                                            <span className="text-sm leading-none font-extrabold">
+                                                {v.type === 'percentage' ? `${v.value}%` : `₱${Number(v.value).toFixed(0)}`}
+                                            </span>
+                                            <span className="text-[8px] font-bold tracking-wide uppercase">OFF</span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-bold tracking-wider text-gray-900">{v.code}</p>
+                                            {v.min_order_amount && (
+                                                <p className="text-[10px] text-gray-400">Min. ₱{Number(v.min_order_amount).toFixed(0)}</p>
+                                            )}
+                                            <div className="mt-0.5 flex items-center gap-1.5">
+                                                {v.valid_to && (
+                                                    <span className="text-[10px] text-gray-400">
+                                                        Exp. {new Date(v.valid_to).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                                {v.claim_limit && (
+                                                    <span className="text-[10px] font-semibold text-amber-500">
+                                                        {v.claim_limit - v.claimed_count} left
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => claim(v.id)}
+                                            disabled={claiming === v.id}
+                                            className="shrink-0 rounded-lg bg-[#2d6a2d] px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-[#245724] disabled:opacity-60"
+                                        >
+                                            {claiming === v.id ? '...' : 'Claim'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Panel footer */}
+                            <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-4 py-2">
+                                <Link
+                                    href={route('customer.vouchers.index')}
+                                    onClick={() => setVoucherPopup(false)}
+                                    className="text-[11px] font-medium text-[#2d6a2d] hover:underline"
+                                >
+                                    View all
+                                </Link>
+                                <button onClick={() => setVoucherPopup(false)} className="text-[11px] text-gray-400 hover:text-gray-600">
+                                    Dismiss
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Panel footer */}
-                        <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-4 py-2">
-                            <Link
-                                href={route('customer.vouchers.index')}
-                                onClick={() => setVoucherPopup(false)}
-                                className="text-[11px] font-medium text-[#2d6a2d] hover:underline"
-                            >
-                                View all
-                            </Link>
-                            <button onClick={() => setVoucherPopup(false)} className="text-[11px] text-gray-400 hover:text-gray-600">
-                                Dismiss
-                            </button>
-                        </div>
+                        {/* Floating circle button */}
+                        <button
+                            onClick={() => setVoucherPopup((o) => !o)}
+                            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#2d6a2d] text-white shadow-lg transition-colors hover:bg-[#245724]"
+                            title="Vouchers available"
+                        >
+                            <Tag className="h-6 w-6" />
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                {visibleVouchers.length}
+                            </span>
+                        </button>
                     </div>
-
-                    {/* Floating circle button */}
-                    <button
-                        onClick={() => setVoucherPopup(o => !o)}
-                        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#2d6a2d] text-white shadow-lg hover:bg-[#245724] transition-colors"
-                        title="Vouchers available"
-                    >
-                        <Tag className="h-6 w-6" />
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                            {visibleVouchers.length}
-                        </span>
-                    </button>
-                </div>
-            )}
+                )}
 
                 {/* Footer */}
                 <footer className="mt-8 bg-[#111] px-4 py-8 text-gray-400 sm:mt-12 sm:py-10">
@@ -530,7 +686,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                         <div className="col-span-2 sm:col-span-1">
                             <div className="mb-3 flex items-center gap-2">
                                 <Leaf className="h-5 w-5 text-[#4a9e4a]" />
-                                <p className="font-bold text-white">CPSU AgriShop</p>
+                                <p className="font-bold text-white">CPSU BSABShop</p>
                             </div>
                             <p className="text-xs leading-relaxed text-gray-500">A modern e-commerce platform for CPSU-BSAB students and faculty.</p>
                         </div>
@@ -562,7 +718,7 @@ export default function CustomerDashboard({ stats, recentOrders, isApprovedSelle
                         </div>
                     </div>
                     <div className="mx-auto mt-8 flex max-w-6xl justify-between border-t border-gray-800 pt-4 text-xs text-gray-600">
-                        <span>© 2026 CPSU AgriShop. All rights reserved.</span>
+                        <span>© 2026 CPSU BSABShop. All rights reserved.</span>
                         <span className="cursor-pointer transition-colors hover:text-white">Contact Us</span>
                     </div>
                 </footer>

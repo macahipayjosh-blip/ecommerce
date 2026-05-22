@@ -635,7 +635,7 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                             <path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 9 10 8M12 12c0-5 5-8 10-8-1 5-4 9-10 8" />
                         </svg>
                     </div>
-                    <span className="ap-logo-name">AgriShop</span>
+                    <span className="ap-logo-name">BSABShop</span>
                     <span className="ap-logo-badge">{roleLabel}</span>
                 </div>
 
@@ -686,7 +686,7 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                     </button>
 
                     <div className="ap-breadcrumb">
-                        <span>AgriShop</span>
+                        <span>BSABShop</span>
                         <span className="ap-breadcrumb-sep">›</span>
                         <span className="ap-breadcrumb-current">{breadcrumb ?? roleLabel}</span>
                     </div>
