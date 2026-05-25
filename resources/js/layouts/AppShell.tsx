@@ -6,6 +6,7 @@ interface NavItem {
     name: string;
     routeName: string;
     icon: React.ReactNode;
+    badge?: number;
 }
 interface NavSection {
     label: string;
@@ -574,21 +575,27 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
     const [dropOpen, setDropOpen] = useState(false);
     const { url } = usePage();
 
-    const { auth } = usePage<{
-        auth: {
-            user?: {
-                name?: string;
-            };
-        };
-        riderProfile?: {
-            full_name?: string;
-            delivery_partner_role?: string;
-        };
-        adminProfile?: {
-            full_name?: string;
-            role?: string;
-        };
+    const { auth, unreadMessages } = usePage<{
+        auth: { user?: { name?: string } };
+        riderProfile?: { full_name?: string; delivery_partner_role?: string };
+        adminProfile?: { full_name?: string; role?: string };
+        unreadMessages?: number;
     }>().props;
+
+    // ── Flash toast ──────────────────────────────────────────────────────────
+    const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
+    const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+    useEffect(() => {
+        if (flash?.success) setToast({ msg: flash.success, type: 'success' });
+        else if (flash?.error) setToast({ msg: flash.error, type: 'error' });
+    }, [flash]);
+
+    useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 4000);
+        return () => clearTimeout(t);
+    }, [toast]);
 
     const displayName = auth?.user?.name || (auth as any)?.riderProfile?.full_name || (auth as any)?.adminProfile?.full_name || roleLabel;
 
@@ -613,7 +620,9 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
 
     const isActive = (routeName: string) => {
         try {
-            return url.startsWith(new URL(route(routeName)).pathname);
+            const generated = route(routeName);
+            const path = generated.startsWith('http') ? new URL(generated).pathname : generated;
+            return url.startsWith(path);
         } catch {
             return false;
         }
@@ -653,6 +662,11 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                                 >
                                     <span className="ap-nav-icon">{item.icon}</span>
                                     {item.name}
+                                    {item.badge && item.badge > 0 ? (
+                                        <span style={{ marginLeft: 'auto', background: '#e53e3e', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700, lineHeight: '16px' }}>
+                                            {item.badge}
+                                        </span>
+                                    ) : null}
                                 </Link>
                             ))}
                         </div>
@@ -758,6 +772,36 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                 {/* Content */}
                 <main className="ap-content">{children}</main>
             </div>
+
+            {/* ── Toast notification ── */}
+            {toast && (
+                <div
+                    onClick={() => setToast(null)}
+                    style={{
+                        position: 'fixed',
+                        bottom: 28,
+                        right: 28,
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '12px 18px',
+                        borderRadius: 10,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        maxWidth: 360,
+                        animation: 'toastIn 0.2s ease',
+                        background: toast.type === 'success' ? 'var(--green-700)' : 'var(--red-700)',
+                        color: '#fff',
+                    }}
+                >
+                    <span style={{ fontSize: 16 }}>{toast.type === 'success' ? '✓' : '✕'}</span>
+                    {toast.msg}
+                </div>
+            )}
+            <style>{`@keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
         </div>
     );
 }

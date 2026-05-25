@@ -6,7 +6,8 @@ interface Props {
     size?: 'sm' | 'md';
 }
 
-export default function StarRating({ rating, count, size = 'sm' }: Props) {
+export default function StarRating({ rating: rawRating, count, size = 'sm' }: Props) {
+    const rating = Number(rawRating) || 0;
     const sz = size === 'md' ? 'h-4 w-4' : 'h-3 w-3';
 
     return (

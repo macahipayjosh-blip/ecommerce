@@ -42,7 +42,7 @@ const formatDiscount = (fs: FlashSale) => (fs.discount_type === 'percentage' ? `
 export default function FlashSalesIndex({ flashSales }: { flashSales: { data: FlashSale[]; links: any[]; meta: any } }) {
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this flash sale?')) {
-            router.delete(route('admin.flash-sales.destroy', id));
+            router.delete(route('admin.flash-sales.destroy', { flash_sale: id }));
         }
     };
 
@@ -117,12 +117,12 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                                         <td className="text-muted text-sm">{fs.creator?.name}</td>
                                         <td>
                                             <div className="flex gap-2">
-                                                <Link href={route('admin.flash-sales.show', fs.id)} className="btn btn-secondary btn-sm">
+                                                <Link href={route('admin.flash-sales.show', { flash_sale: fs.id })} className="btn btn-secondary btn-sm">
                                                     <Eye size={13} /> View
                                                 </Link>
                                                 <button
                                                     onClick={() => {
-                                                        router.get(route('admin.flash-sales.edit', fs.id));
+                                                        router.get(route('admin.flash-sales.edit', { flash_sale: fs.id }));
                                                     }}
                                                     className="btn btn-secondary btn-sm"
                                                 >

@@ -1,6 +1,7 @@
+import StarRating from '@/components/StarRating';
 import { type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ChevronRight, Clock, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, Star, User, X } from 'lucide-react';
+import { ChevronRight, Clock, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Product {
@@ -11,17 +12,22 @@ interface Product {
     compare_at_price?: string;
     stock_quantity: number;
     status: string;
+    reviews_avg_rating?: number | null;
+    reviews_count?: number;
     category?: { id: number; name: string };
     brand?: { id: number; name: string };
     images?: { image_path: string; is_primary: boolean }[];
+}
+
+interface FlashSaleProduct extends Product {
+    flash_price?: number | null;
+    flash_stock_left?: number | null;
 }
 
 interface FlashSale {
     id: number;
     title: string;
     description?: string;
-    discount_type: 'percentage' | 'fixed';
-    discount_value: string | number;
     start_time: string;
     end_time: string;
     active: boolean;
@@ -66,12 +72,28 @@ interface Auction {
     images?: { image_path: string; is_primary: boolean }[];
 }
 
+function parseEndTime(endTime: string): number {
+    // Ensure the string is treated as UTC if no timezone info is present
+    const normalized = endTime.includes('T') || endTime.endsWith('Z') ? endTime : endTime.replace(' ', 'T') + 'Z';
+    return new Date(normalized).getTime();
+}
+
 function AuctionCountdown({ endTime }: { endTime: string }) {
-    const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((new Date(endTime).getTime() - Date.now()) / 1000)));
+    const getSecondsLeft = () => Math.max(0, Math.floor((parseEndTime(endTime) - Date.now()) / 1000));
+    const [secondsLeft, setSecondsLeft] = useState(getSecondsLeft);
+
     useEffect(() => {
-        const t = setInterval(() => setSecondsLeft((p) => Math.max(0, p - 1)), 1000);
+        setSecondsLeft(getSecondsLeft());
+        const t = setInterval(() => {
+            const left = getSecondsLeft();
+            setSecondsLeft(left);
+            if (left === 0) clearInterval(t);
+        }, 1000);
         return () => clearInterval(t);
-    }, []);
+    }, [endTime]);
+
+    if (secondsLeft === 0) return <span className="font-mono font-bold text-gray-400">Ended</span>;
+
     const h = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
     const m = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
     const s = String(secondsLeft % 60).padStart(2, '0');
@@ -112,9 +134,7 @@ function ProductCard({ product, isLoggedIn }: { product: Product; isLoggedIn: bo
                     {product.name}
                 </Link>
                 <div className="mb-2 flex items-center gap-0.5">
-                    {[...Array(5)].map((_, j) => (
-                        <Star key={j} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    ))}
+                    <StarRating rating={product.reviews_avg_rating ?? 0} count={product.reviews_count} />
                 </div>
                 <div className="mb-2 flex items-center gap-2">
                     <span className="font-bold text-[#2d6a2d]">₱{price.toFixed(2)}</span>
@@ -147,7 +167,7 @@ export default function Welcome() {
             categories: Category[];
             settings: Record<string, string>;
             flashSale?: FlashSale | null;
-            flashSaleProducts?: Product[];
+            flashSaleProducts?: FlashSaleProduct[];
             liveAuctions?: Auction[];
         }
     >().props;
@@ -390,20 +410,17 @@ export default function Welcome() {
                                 <div className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm text-red-600">
                                     <Clock className="h-4 w-4" />
                                     Ends in <Countdown endTime={flashSale.end_time} />
-                                    <span className="ml-1 rounded-full bg-white/50 px-2 py-0.5 text-xs font-bold text-red-700">
-                                        {flashSale.discount_type === 'percentage'
-                                            ? `-${Number(flashSale.discount_value)}%`
-                                            : `-₱${Number(flashSale.discount_value).toFixed(0)}`}
-                                    </span>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                            <div className="flex justify-center gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:justify-items-stretch sm:overflow-visible sm:pb-0">
                                 {flashSaleProducts.map((p) => {
                                     const img = p.images?.find((i) => i.is_primary) ?? p.images?.[0];
+                                    const displayPrice = p.flash_price ?? parseFloat(p.price);
+                                    const normalPrice = parseFloat(p.price);
                                     return (
                                         <div
                                             key={p.id}
-                                            className="overflow-hidden rounded-xl border border-gray-100 transition-shadow hover:shadow-md"
+                                            className="w-[140px] shrink-0 overflow-hidden rounded-xl border border-gray-100 transition-shadow hover:shadow-md sm:w-auto"
                                         >
                                             <div className="flex h-28 items-center justify-center overflow-hidden bg-gray-50">
                                                 {img ? (
@@ -414,11 +431,17 @@ export default function Welcome() {
                                             </div>
                                             <div className="p-2.5">
                                                 <p className="truncate text-xs font-medium text-gray-700">{p.name}</p>
-                                                <p className="text-sm font-bold text-[#2d6a2d]">₱{parseFloat(p.price).toFixed(2)}</p>
-                                                <div className="mt-0.5 flex items-center gap-1 text-xs text-red-500">
-                                                    <Clock className="h-3 w-3" />
-                                                    <span>Limited time</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="text-sm font-bold text-[#2d6a2d]">₱{displayPrice.toFixed(2)}</p>
+                                                    {p.flash_price && p.flash_price < normalPrice && (
+                                                        <p className="text-xs text-gray-400 line-through">₱{normalPrice.toFixed(2)}</p>
+                                                    )}
                                                 </div>
+                                                {p.flash_stock_left !== null && p.flash_stock_left !== undefined && (
+                                                    <div className="mt-0.5 text-xs text-red-500 font-medium">
+                                                        {p.flash_stock_left === 0 ? 'Sold out' : `Only ${p.flash_stock_left} left`}
+                                                    </div>
+                                                )}
                                                 <Link
                                                     href={isLoggedIn ? route('customer.products.show', p.id) : route('login')}
                                                     className="mt-2 block w-full rounded-lg bg-[#2d6a2d] py-1.5 text-center text-xs font-medium text-white transition-colors hover:bg-[#245724]"
@@ -464,7 +487,8 @@ export default function Welcome() {
                                                 ) : (
                                                     <Gavel className="h-10 w-10 text-gray-200" />
                                                 )}
-                                                <span className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">
+                                                <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white">
+                                                    <Clock className="h-2.5 w-2.5" />
                                                     <AuctionCountdown endTime={auction.auction_end_at} />
                                                 </span>
                                             </div>
@@ -488,28 +512,30 @@ export default function Welcome() {
 
                     {/* Featured Categories */}
                     {(categories ?? []).length > 0 && (
-                        <div>
-                            <h2 className="mb-3 text-lg font-bold text-gray-800">{s.categories_title || 'Featured Categories'}</h2>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                {categories.slice(0, 4).map((cat) => (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-lg font-bold text-gray-800">{s.categories_title || 'Featured Categories'}</h2>
+                                <Link href={shopRoute} className="flex items-center gap-1 text-sm font-medium text-[#2d6a2d] hover:underline">
+                                    Browse all <ChevronRight className="h-4 w-4" />
+                                </Link>
+                            </div>
+                            {/* mobile: horizontal scroll  |  sm+: centered wrap */}
+                            <div className="flex gap-3 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
+                                {categories.map((cat) => (
                                     <Link
                                         key={cat.id}
                                         href={isLoggedIn ? route('customer.products.index') + `?category=${cat.id}` : route('login')}
-                                        className="group overflow-hidden rounded-xl border border-[#c8e6c9] bg-[#e8f5e9] transition-all hover:border-[#2d6a2d] hover:shadow-md"
+                                        className="w-[120px] shrink-0 overflow-hidden rounded-lg border border-gray-100 transition-shadow hover:shadow-md sm:w-[140px]"
                                     >
-                                        <div className="relative h-24 w-full overflow-hidden bg-[#c8e6c9]">
+                                        <div className="flex h-24 items-center justify-center overflow-hidden bg-gray-50 sm:h-28">
                                             {cat.image ? (
-                                                <img
-                                                    src={`/storage/${cat.image}`}
-                                                    alt={cat.name}
-                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                />
+                                                <img src={`/storage/${cat.image}`} alt={cat.name} className="h-full w-full object-cover" />
                                             ) : (
-                                                <div className="flex h-full w-full items-center justify-center text-4xl">🌿</div>
+                                                <span className="text-4xl">🌿</span>
                                             )}
                                         </div>
-                                        <div className="p-3">
-                                            <span className="text-sm font-semibold text-[#2d6a2d] group-hover:text-[#1a4d1a]">{cat.name}</span>
+                                        <div className="p-2 sm:p-2.5">
+                                            <p className="truncate text-xs font-medium text-gray-700 sm:text-sm">{cat.name}</p>
                                         </div>
                                     </Link>
                                 ))}

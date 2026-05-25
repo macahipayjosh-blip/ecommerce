@@ -1,147 +1,278 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Package, User, MapPin, CreditCard, RefreshCw } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
+import { Head, Link, router } from '@inertiajs/react';
+import { Package } from 'lucide-react';
 
-interface OrderItem { id: number; product: { name: string; sku?: string; images?: { url: string; is_primary: boolean }[] }; quantity: number; unit_price: number }
-interface Order {
-    id: number; order_number: string; status: string; payment_status: string; payment_method: string;
-    subtotal: number; shipping_cost: number; tax: number; discount: number; total: number;
-    items: OrderItem[];
-    user?: { name: string; email: string; phone?: string };
-    shipping_address?: { full_name: string; address_line1: string; city: string; state: string; postal_code: string; country: string };
-    shipment?: { carrier: string; tracking_number: string; status: string };
-    notes?: string;
-    created_at: string;
+interface OrderItem {
+    id: number;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    product: {
+        id: number;
+        name: string;
+        sku?: string;
+        images?: { url: string; is_primary: boolean }[];
+    };
 }
 
-const STATUS_COLOR: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800', processing: 'bg-blue-100 text-blue-800',
-    shipped: 'bg-purple-100 text-purple-800', delivered: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800', refunded: 'bg-gray-100 text-gray-800',
+interface Order {
+    id: number;
+    order_number: string;
+    status: string;
+    payment_method: string;
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    notes?: string;
+    created_at: string;
+    items: OrderItem[];
+    user?: { name: string; email: string; phone?: string };
+    seller?: { name: string; email: string };
+    address?: {
+        full_name?: string;
+        address_line1?: string;
+        address_line2?: string;
+        city?: string;
+        state?: string;
+        postal_code?: string;
+        country?: string;
+        phone?: string;
+    };
+    shipment?: { carrier?: string; tracking_number?: string; status?: string };
+}
+
+const STATUS_BADGE: Record<string, string> = {
+    pending:   'badge-yellow',
+    confirmed: 'badge-blue',
+    paid:      'badge-blue',
+    shipped:   'badge-purple',
+    delivered: 'badge-green',
+    cancelled: 'badge-red',
+    refunded:  'badge-gray',
 };
 
+const STATUSES = ['pending', 'confirmed', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'];
+
+const Field = ({ label, value }: { label: string; value?: string | null }) => (
+    <div className="field-row">
+        <span className="field-label">{label}</span>
+        <span className="field-value">{value || '—'}</span>
+    </div>
+);
+
 export default function AdminOrderShow({ order }: { order: Order }) {
-    const updateStatus = (status: string) => {
-        router.patch(route('admin.orders.status', order.id), { status });
-    };
+    const updateStatus = (status: string) =>
+        router.patch(route('admin.orders.status', { order: order.id }), { status });
 
     const refund = () => {
-        if (confirm('Process a refund for this order?')) {
-            router.post(route('admin.orders.refund', order.id));
-        }
+        if (confirm('Process a refund for this order?'))
+            router.post(route('admin.orders.refund', { order: order.id }));
     };
+
+    const itemCount = order.items?.length ?? 0;
+    const status = order.status ?? 'pending';
 
     return (
         <AdminLayout breadcrumb={`Order #${order.order_number}`}>
             <Head title={`Order #${order.order_number}`} />
-            <div className="max-w-5xl space-y-6">
-                    {/* Header */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        <Link href={route('admin.orders.index')} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
-                            ←
-                        </Link>
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold text-gray-900">Order #{order.order_number}</h1>
-                            <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleString()}</p>
+
+            {/* Page Header */}
+            <div className="pg-header">
+                <div>
+                    <Link href={route('admin.orders.index')} className="breadcrumb-link">
+                        ← Back to Orders
+                    </Link>
+                    <div className="pg-title">Order #{order.order_number}</div>
+                    <div className="pg-subtitle">{new Date(order.created_at).toLocaleString()}</div>
+                </div>
+                <div className="flex gap-2 items-center">
+                    <span className={`badge ${STATUS_BADGE[status] ?? 'badge-gray'}`}>
+                        <span className="badge-dot" />
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="stat-grid">
+                {[
+                    { label: 'Items',          value: itemCount,                                          icon: '📦' },
+                    { label: 'Subtotal',        value: `₱${Number(order.subtotal).toFixed(2)}`,           icon: '🧾' },
+                    { label: 'Total',           value: `₱${Number(order.total).toFixed(2)}`,              icon: '💰' },
+                    { label: 'Payment Method',  value: order.payment_method?.toUpperCase() ?? '—',        icon: '💳' },
+                ].map((s) => (
+                    <div key={s.label} className="stat-card">
+                        <div className="stat-icon" style={{ background: '#f1f3f7' }}>{s.icon}</div>
+                        <div className="stat-label">{s.label}</div>
+                        <div className="stat-value stat-value-sm">{s.value}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Update Status + Refund */}
+            <div className="card mb-6">
+                <div className="card-header">
+                    <span className="card-title">Update Status</span>
+                </div>
+                <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <select
+                        value={status}
+                        onChange={(e) => updateStatus(e.target.value)}
+                        className="form-input"
+                        style={{ width: 'auto', minWidth: 180 }}
+                    >
+                        {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                            </option>
+                        ))}
+                    </select>
+                    {status !== 'refunded' && status !== 'cancelled' && (
+                        <button onClick={refund} className="btn btn-danger btn-sm">
+                            ↩ Refund
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid-2">
+                {/* Left column */}
+                <div className="grid-column" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+                    {/* Order Items */}
+                    <div className="card">
+                        <div className="card-header">
+                            <span className="card-title">Items ({itemCount})</span>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            <select
-                                value={order.status ?? ''}
-                                onChange={(e) => updateStatus(e.target.value)}
-                                className={`rounded-full border-0 px-3 py-1 text-sm font-semibold ${STATUS_COLOR[order.status] ?? 'bg-gray-100 text-gray-800'}`}
-                            >
-                                {['pending','processing','shipped','delivered','cancelled','refunded'].map((s) => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-                            {order.payment_status === 'paid' && order.status !== 'refunded' && (
-                                <button onClick={refund} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <RefreshCw className="h-3.5 w-3.5" /> Refund
-                                </button>
-                            )}
+                        <div className="table-wrap">
+                            <table className="ap-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Unit Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order.items.map((item) => {
+                                        const img = item.product.images?.find((i) => i.is_primary) ?? item.product.images?.[0];
+                                        return (
+                                            <tr key={item.id}>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', background: '#f1f3f7', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {img
+                                                                ? <img src={img.url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                : <Package size={18} color="#9ca3af" />
+                                                            }
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: 500, fontSize: 13 }}>{item.product.name}</div>
+                                                            {item.product.sku && <div style={{ fontSize: 11, color: '#9ca3af' }}>SKU: {item.product.sku}</div>}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="text-sm">₱{Number(item.unit_price).toFixed(2)}</td>
+                                                <td className="text-sm">{item.quantity}</td>
+                                                <td className="text-sm font-semibold">₱{Number(item.total_price ?? item.quantity * item.unit_price).toFixed(2)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        {/* Totals */}
+                        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                            {[
+                                ['Subtotal', `₱${Number(order.subtotal).toFixed(2)}`],
+                                ['Shipping', `₱${Number(order.shipping ?? 0).toFixed(2)}`],
+                                ['Tax',      `₱${Number(order.tax ?? 0).toFixed(2)}`],
+                            ].map(([l, v]) => (
+                                <div key={l} className="field-row" style={{ width: 220, justifyContent: 'space-between' }}>
+                                    <span className="field-label">{l}</span>
+                                    <span className="field-value">{v}</span>
+                                </div>
+                            ))}
+                            <div style={{ width: 220, display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid var(--border)', fontWeight: 700, fontSize: 14 }}>
+                                <span>Total</span>
+                                <span>₱{Number(order.total).toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                        {/* Items */}
-                        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 text-lg font-semibold text-gray-900">Items ({order.items.length})</h2>
-                            <div className="divide-y divide-gray-100">
-                                {order.items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-4 py-3">
-                                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
-                                            {(() => {
-                                                const img = item.product.images?.find((i) => i.is_primary) ?? item.product.images?.[0];
-                                                return img
-                                                    ? <img src={img.url} alt={item.product.name} className="h-full w-full object-cover" />
-                                                    : <Package className="m-auto h-6 w-6 text-gray-400" />;
-                                            })()}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="truncate font-medium text-gray-900">{item.product.name}</p>
-                                            {item.product.sku && <p className="text-xs text-gray-400">SKU: {item.product.sku}</p>}
-                                            <p className="text-sm text-gray-500">Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}</p>
-                                        </div>
-                                        <p className="font-semibold text-gray-900">${(item.quantity * Number(item.unit_price)).toFixed(2)}</p>
-                                    </div>
-                                ))}
+                    {/* Notes */}
+                    {order.notes && (
+                        <div className="card">
+                            <div className="card-header"><span className="card-title">Notes</span></div>
+                            <div className="card-body">
+                                <p className="text-sm text-muted">{order.notes}</p>
                             </div>
                         </div>
+                    )}
+                </div>
 
-                        {/* Side */}
-                        <div className="space-y-4">
-                            {/* Customer */}
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
-                                    <User className="h-4 w-4 text-gray-500" /> Customer
-                                </h2>
-                                <p className="font-medium text-gray-900">{order.user?.name ?? '—'}</p>
-                                <p className="text-sm text-gray-500">{order.user?.email}</p>
-                                {order.user?.phone && <p className="text-sm text-gray-500">{order.user.phone}</p>}
-                            </div>
+                {/* Right column */}
+                <div className="grid-column" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-                            {/* Payment */}
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
-                                    <CreditCard className="h-4 w-4 text-gray-500" /> Payment
-                                </h2>
-                                <div className="space-y-1.5 text-sm">
-                                    {[['Subtotal', `$${Number(order.subtotal).toFixed(2)}`], ['Shipping', `$${Number(order.shipping_cost).toFixed(2)}`], ['Tax', `$${Number(order.tax).toFixed(2)}`], ...(order.discount > 0 ? [['Discount', `-$${Number(order.discount).toFixed(2)}`]] : [])].map(([l, v]) => (
-                                        <div key={l} className="flex justify-between text-gray-600"><span>{l}</span><span>{v}</span></div>
-                                    ))}
-                                    <div className="flex justify-between border-t border-gray-200 pt-2 font-bold text-gray-900">
-                                        <span>Total</span><span>${Number(order.total).toFixed(2)}</span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 capitalize pt-1">{order.payment_method} — {order.payment_status}</p>
-                                </div>
-                            </div>
-
-                            {/* Address */}
-                            {order.shipping_address && (
-                                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                    <h2 className="mb-2 flex items-center gap-2 font-semibold text-gray-900">
-                                        <MapPin className="h-4 w-4 text-gray-500" /> Ship To
-                                    </h2>
-                                    <address className="not-italic text-sm text-gray-600 space-y-0.5">
-                                        <p className="font-medium text-gray-900">{order.shipping_address.full_name}</p>
-                                        <p>{order.shipping_address.address_line1}</p>
-                                        <p>{order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}</p>
-                                        <p>{order.shipping_address.country}</p>
-                                    </address>
-                                </div>
-                            )}
-
-                            {/* Shipment */}
-                            {order.shipment && (
-                                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                                    <h2 className="mb-2 font-semibold text-gray-900">Shipment</h2>
-                                    <p className="text-sm text-gray-700">{order.shipment.carrier}</p>
-                                    <p className="text-sm text-gray-500">{order.shipment.tracking_number}</p>
-                                    <p className="text-xs text-gray-400 capitalize mt-1">{order.shipment.status}</p>
-                                </div>
-                            )}
+                    {/* Customer */}
+                    <div className="card">
+                        <div className="card-header"><span className="card-title">👤 Customer</span></div>
+                        <div className="card-body">
+                            <Field label="Name"  value={order.user?.name} />
+                            <Field label="Email" value={order.user?.email} />
+                            <Field label="Phone" value={order.user?.phone} />
                         </div>
                     </div>
+
+                    {/* Seller */}
+                    {order.seller && (
+                        <div className="card">
+                            <div className="card-header"><span className="card-title">🏪 Seller</span></div>
+                            <div className="card-body">
+                                <Field label="Name"  value={order.seller.name} />
+                                <Field label="Email" value={order.seller.email} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Shipping Address */}
+                    {order.address && (
+                        <div className="card">
+                            <div className="card-header"><span className="card-title">📍 Shipping Address</span></div>
+                            <div className="card-body">
+                                <Field label="Name"    value={order.address.full_name} />
+                                <Field label="Address" value={order.address.address_line1} />
+                                {order.address.address_line2 && <Field label="" value={order.address.address_line2} />}
+                                <Field label="City"    value={[order.address.city, order.address.state, order.address.postal_code].filter(Boolean).join(', ')} />
+                                <Field label="Country" value={order.address.country} />
+                                <Field label="Phone"   value={order.address.phone} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Shipment */}
+                    {order.shipment && (
+                        <div className="card">
+                            <div className="card-header"><span className="card-title">🚚 Shipment</span></div>
+                            <div className="card-body">
+                                <Field label="Carrier"  value={order.shipment.carrier} />
+                                <Field label="Tracking" value={order.shipment.tracking_number} />
+                                <Field label="Status"   value={order.shipment.status} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Payment */}
+                    <div className="card">
+                        <div className="card-header"><span className="card-title">💳 Payment</span></div>
+                        <div className="card-body">
+                            <Field label="Method" value={order.payment_method?.toUpperCase()} />
+                            <Field label="Status" value={status.charAt(0).toUpperCase() + status.slice(1)} />
+                        </div>
+                    </div>
+                </div>
             </div>
         </AdminLayout>
     );

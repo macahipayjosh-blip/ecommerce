@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\ProductImage;
 use App\Models\FlashSale;
+use App\Models\ProductMessage;
 use App\Http\Controllers\Admin\SettingsController;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ class ProductController extends Controller
         $products = Product::with(['category', 'brand', 'images'])
             ->where('status', 'active')
             ->where('is_auction', false)
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->latest()
             ->take(6)
             ->get();
@@ -33,12 +36,29 @@ class ProductController extends Controller
             ->first();
 
         $flashSaleProducts = collect();
-        if ($flashSale && $flashSale->applicable_products) {
-            $flashSaleProducts = Product::with(['category', 'brand', 'images'])
-                ->where('status', 'active')
-                ->whereIn('id', $flashSale->applicable_products)
-                ->take(4)
-                ->get();
+        if ($flashSale) {
+            $approvedProductIds = \App\Models\FlashSaleProduct::where('flash_sale_id', $flashSale->id)
+                ->where('status', 'approved')
+                ->pluck('product_id');
+
+            if ($approvedProductIds->isNotEmpty()) {
+                $fsps = \App\Models\FlashSaleProduct::where('flash_sale_id', $flashSale->id)
+                    ->where('status', 'approved')
+                    ->get()
+                    ->keyBy('product_id');
+
+                $flashSaleProducts = Product::with(['category', 'brand', 'images'])
+                    ->where('status', 'active')
+                    ->whereIn('id', $approvedProductIds)
+                    ->take(4)
+                    ->get()
+                    ->map(function ($p) use ($fsps) {
+                        $fsp = $fsps[$p->id] ?? null;
+                        $p->flash_price       = $fsp ? (float) $fsp->flash_price : null;
+                        $p->flash_stock_left  = $fsp ? $fsp->remainingStock() : null;
+                        return $p;
+                    });
+            }
         }
 
         $liveAuctions = Product::where('is_auction', true)
@@ -65,7 +85,8 @@ class ProductController extends Controller
         $query = Product::with(['category', 'brand', 'images'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->where('is_auction', false);
 
         if (!empty($input['search'])) {
             $query->where('name', 'like', '%' . $input['search'] . '%');
@@ -149,15 +170,47 @@ class ProductController extends Controller
         }
 
         $inWishlist = false;
+        $messages = [];
         if ($user = auth()->user()) {
             $user->loadMissing('customerProfile');
             $wishlist = $user->customerProfile?->wishlist ?? [];
             $inWishlist = in_array($product->id, $wishlist);
+
+            // Load conversation between this user and the seller for this product
+            $sellerId = $product->vendor_id;
+            if ($sellerId) {
+                $messages = ProductMessage::with('sender:id,name')
+                    ->where('product_id', $product->id)
+                    ->where(function ($q) use ($user, $sellerId) {
+                        $q->where(fn($q) => $q->where('sender_id', $user->id)->where('receiver_id', $sellerId))
+                          ->orWhere(fn($q) => $q->where('sender_id', $sellerId)->where('receiver_id', $user->id));
+                    })
+                    ->orderBy('created_at')
+                    ->get(['id', 'sender_id', 'message', 'created_at']);
+            }
         }
         $product->in_wishlist = $inWishlist;
 
+        $similarProducts = Product::with(['images'])
+            ->where('status', 'active')
+            ->where('is_auction', false)
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->withAvg('reviews', 'rating')
+            ->latest()
+            ->take(4)
+            ->get()
+            ->map(fn($p) => [
+                'id'    => $p->id,
+                'name'  => $p->name,
+                'price' => $p->price,
+                'compare_at_price' => $p->compare_at_price,
+                'avg_rating' => $p->reviews_avg_rating,
+                'image' => $p->images->firstWhere('is_primary', true)?->url ?? $p->images->first()?->url,
+            ]);
+
         $view = Auth::user()?->hasRole('customer') ? 'Customer/Products/Show' : 'Products/Show';
-        return Inertia::render($view, compact('product'));
+        return Inertia::render($view, compact('product', 'messages', 'similarProducts'));
     }
 
     public function create()

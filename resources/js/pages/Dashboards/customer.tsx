@@ -1,3 +1,4 @@
+import StarRating from '@/components/StarRating';
 import { Head, Link, router } from '@inertiajs/react';
 import { CheckCircle, Clock, CreditCard, Gift, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, Store, Tag, Truck, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -13,8 +14,82 @@ interface Product {
     id: number;
     name: string;
     price: string;
+    compare_at_price?: string;
+    stock_quantity?: number;
+    reviews_avg_rating?: number;
+    reviews_count?: number;
     category?: { id: number; name: string };
     images?: { image_path: string; is_primary: boolean }[];
+}
+
+function ProductCard({ product }: { product: Product }) {
+    const img = product.images?.find((i) => i.is_primary) ?? product.images?.[0];
+    const price = parseFloat(product.price);
+    const comparePrice = product.compare_at_price ? parseFloat(product.compare_at_price) : null;
+    const discount = comparePrice && comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : 0;
+
+    return (
+        <div className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-lg">
+            <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gray-50">
+                {img ? (
+                    <img
+                        src={`/storage/${img.image_path}`}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                ) : (
+                    <Package className="h-14 w-14 text-gray-200" />
+                )}
+                {discount > 0 && (
+                    <span className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">-{discount}%</span>
+                )}
+                {product.stock_quantity === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Out of Stock</span>
+                    </div>
+                )}
+            </div>
+            <div className="p-3">
+                <p className="mb-0.5 text-xs font-medium text-[#2d6a2d]">{product.category?.name}</p>
+                <Link
+                    href={route('customer.products.show', product.id)}
+                    className="mb-1 line-clamp-2 block text-sm font-semibold text-gray-800 transition-colors hover:text-[#2d6a2d]"
+                >
+                    {product.name}
+                </Link>
+                <div className="mb-2">
+                    <StarRating rating={product.reviews_avg_rating ?? 0} count={product.reviews_count} />
+                </div>
+                <div className="mb-2 flex items-center gap-2">
+                    <span className="font-bold text-[#2d6a2d]">₱{price.toFixed(2)}</span>
+                    {comparePrice && comparePrice > price && (
+                        <span className="text-xs text-gray-400 line-through">₱{comparePrice.toFixed(2)}</span>
+                    )}
+                </div>
+                <div className="flex gap-1.5">
+                    <Link
+                        href={route('customer.cart.index')}
+                        className="flex-1 rounded-lg border border-[#2d6a2d] py-1.5 text-center text-xs font-medium text-[#2d6a2d] transition-colors hover:bg-[#e8f5e9]"
+                    >
+                        Add to Cart
+                    </Link>
+                    <Link
+                        href={route('customer.products.show', product.id)}
+                        className="flex-1 rounded-lg bg-[#f59e0b] py-1.5 text-center text-xs font-medium text-white transition-colors hover:bg-[#d97706]"
+                    >
+                        Buy Now
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+interface Category {
+    id: number;
+    name: string;
+    image?: string;
+    products_count: number;
 }
 
 interface FlashSale {
@@ -97,6 +172,8 @@ export default function CustomerDashboard({
     flashSale,
     flashSaleProducts,
     liveAuctions,
+    featuredCategories = [],
+    latestProducts = [],
 }: {
     stats: Stats;
     recentOrders: Order[];
@@ -106,6 +183,8 @@ export default function CustomerDashboard({
     flashSale?: FlashSale | null;
     flashSaleProducts?: Product[];
     liveAuctions?: Auction[];
+    featuredCategories?: Category[];
+    latestProducts?: Product[];
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -435,14 +514,14 @@ export default function CustomerDashboard({
                                     </span>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <div className="flex justify-center gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4 sm:justify-items-stretch sm:overflow-visible sm:pb-0">
                                 {flashSaleProducts.map((p) => {
                                     const img = p.images?.find((i) => i.is_primary) ?? p.images?.[0];
                                     return (
                                         <Link
                                             key={p.id}
                                             href={route('customer.products.show', p.id)}
-                                            className="overflow-hidden rounded-lg border border-gray-100 transition-shadow hover:shadow-md"
+                                            className="w-[140px] shrink-0 overflow-hidden rounded-lg border border-gray-100 transition-shadow hover:shadow-md sm:w-auto"
                                         >
                                             <div className="flex h-24 items-center justify-center overflow-hidden bg-gray-50 sm:h-28">
                                                 {img ? (
@@ -508,6 +587,57 @@ export default function CustomerDashboard({
                                         </Link>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Featured Categories */}
+                    {featuredCategories.length > 0 && (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-base font-bold text-gray-800 sm:text-lg">Featured Categories</h2>
+                                <Link href={route('customer.products.index')} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
+                                    Browse all →
+                                </Link>
+                            </div>
+                            {/* mobile: horizontal scroll  |  sm+: centered wrap */}
+                            <div className="flex gap-3 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
+                                {featuredCategories.map((cat) => (
+                                    <Link
+                                        key={cat.id}
+                                        href={route('customer.products.index') + `?category=${cat.id}`}
+                                        className="w-[120px] shrink-0 overflow-hidden rounded-lg border border-gray-100 transition-shadow hover:shadow-md sm:w-[140px]"
+                                    >
+                                        <div className="flex h-24 items-center justify-center overflow-hidden bg-gray-50 sm:h-28">
+                                            {cat.image ? (
+                                                <img src={`/storage/${cat.image}`} alt={cat.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <ShoppingBag className="h-10 w-10 text-gray-200" />
+                                            )}
+                                        </div>
+                                        <div className="p-2 sm:p-2.5">
+                                            <p className="truncate text-xs font-medium text-gray-700 sm:text-sm">{cat.name}</p>
+                                            <p className="text-[10px] text-gray-400">{cat.products_count} items</p>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Latest Products */}
+                    {latestProducts.length > 0 && (
+                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-base font-bold text-gray-800 sm:text-lg">Latest Products</h2>
+                                <Link href={route('customer.products.index') + '?sort=newest'} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
+                                    View all →
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                                {latestProducts.map((p) => (
+                                    <ProductCard key={p.id} product={p} />
+                                ))}
                             </div>
                         </div>
                     )}

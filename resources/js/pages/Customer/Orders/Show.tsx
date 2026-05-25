@@ -61,6 +61,7 @@ interface Order {
     shipment?: { carrier: string; tracking_number: string; tracking_url?: string; status: string; estimated_delivery?: string };
     messages: Message[];
     created_at: string;
+    proof_photo?: string;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -329,8 +330,14 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
 
                         {order.status === 'delivered' && (
                             <button
-                                onClick={() => setShowReturn(!showReturn)}
-                                className="inline-flex items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-100"
+                                onClick={() => !order.proof_photo && setShowReturn(!showReturn)}
+                                disabled={!!order.proof_photo}
+                                title={order.proof_photo ? 'Return is disabled after proof of delivery has been submitted' : undefined}
+                                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${
+                                    order.proof_photo
+                                        ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
+                                        : 'border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                                }`}
                             >
                                 <RotateCcw className="h-4 w-4" /> Request Return
                             </button>

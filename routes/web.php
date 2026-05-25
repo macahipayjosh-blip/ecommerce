@@ -19,12 +19,14 @@ use App\Http\Controllers\Admin\PaymentMonitoringController;
 use App\Http\Controllers\Admin\ReturnManagementController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Seller\FlashSaleController as SellerFlashSaleController;
 use App\Http\Controllers\Seller\ProductManagementController;
 use App\Http\Controllers\Seller\SellerOrderController;
 use App\Http\Controllers\Seller\SellerDashboardController;
 use App\Http\Controllers\Customer\VoucherController;
 use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
+use App\Http\Controllers\ProductMessageController;
 use App\Http\Controllers\Rider\RiderController;
 use App\Http\Controllers\ProfileController as SharedProfileController;
 use App\Http\Controllers\RoleSwitchController;
@@ -86,6 +88,7 @@ Route::middleware('auth')->group(function () {
         Route::post('orders/{order}/review', [CustomerOrderController::class, 'storeReview'])->name('orders.review');
         Route::get('orders/{order}/invoice', [CustomerOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('orders/{order}/message', [CustomerOrderController::class, 'sendMessage'])->name('orders.message');
+        Route::post('products/{product}/message', [ProductMessageController::class, 'store'])->name('products.message');
         Route::post('auctions/{product}/bid', [\App\Http\Controllers\AuctionController::class, 'placeBid'])->name('auctions.bid');
         Route::get('profile', [CustomerProfileController::class, 'index'])->name('profile.index');
         Route::patch('profile', [CustomerProfileController::class, 'update'])->name('profile.patch');
@@ -148,6 +151,20 @@ Route::middleware('auth')->group(function () {
         // Returns
         Route::get('returns', [SellerDashboardController::class, 'returns'])->name('returns.index');
         Route::patch('returns/{order}/process', [SellerDashboardController::class, 'processReturn'])->name('returns.process');
+
+        // Flash Sales
+        Route::get('flash-sales', [SellerFlashSaleController::class, 'index'])->name('flash-sales.index');
+        Route::get('flash-sales/{flashSale}/submit', [SellerFlashSaleController::class, 'create'])->name('flash-sales.create');
+        Route::post('flash-sales/{flashSale}/submit', [SellerFlashSaleController::class, 'store'])->name('flash-sales.store');
+        Route::post('flash-sales/{flashSale}/submit-all', [SellerFlashSaleController::class, 'storeAll'])->name('flash-sales.store-all');
+        Route::get('flash-sales/{flashSaleProduct}/edit', [SellerFlashSaleController::class, 'edit'])->name('flash-sales.edit');
+        Route::put('flash-sales/{flashSaleProduct}/edit', [SellerFlashSaleController::class, 'update'])->name('flash-sales.update');
+        Route::delete('flash-sales/{flashSaleProduct}', [SellerFlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
+
+        // Messages
+        Route::get('messages', [ProductMessageController::class, 'sellerInbox'])->name('messages.index');
+        Route::get('messages/{product}', [ProductMessageController::class, 'sellerConversation'])->name('messages.show');
+        Route::post('messages/{product}/reply', [ProductMessageController::class, 'store'])->name('messages.reply');
 
         // Performance
         Route::get('performance', [SellerDashboardController::class, 'performance'])->name('performance.index');
@@ -219,6 +236,11 @@ Route::middleware('auth')->group(function () {
 
         // Flash Sales
         Route::resource('flash-sales', FlashSaleController::class);
+        Route::post('flash-sales/{flashSaleProduct}/approve', [FlashSaleController::class, 'approveProduct'])->name('flash-sales.approve');
+        Route::post('flash-sales/{flashSaleProduct}/reject', [FlashSaleController::class, 'rejectProduct'])->name('flash-sales.reject');
+        Route::delete('flash-sales/{flashSaleProduct}/remove', [FlashSaleController::class, 'removeProduct'])->name('flash-sales.remove');
+        Route::post('flash-sales/{flashSale}/approve-all', [FlashSaleController::class, 'approveAll'])->name('flash-sales.approve-all');
+        Route::post('flash-sales/{flashSale}/reject-all', [FlashSaleController::class, 'rejectAll'])->name('flash-sales.reject-all');
 
         // Reports
         Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');

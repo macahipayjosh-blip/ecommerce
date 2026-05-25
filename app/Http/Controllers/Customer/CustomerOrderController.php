@@ -40,6 +40,7 @@ class CustomerOrderController extends Controller
         $orderData = array_merge($order->toArray(), [
             'shipping_cost' => $order->shipping,
             'discount'      => 0,
+            'proof_photo'   => $order->proof_photo,
         ]);
 
         return Inertia::render('Customer/Orders/Show', [
@@ -74,6 +75,7 @@ class CustomerOrderController extends Controller
     {
         abort_if($order->user_id !== auth()->id(), 403);
         abort_if($order->status !== 'delivered', 422, 'Only delivered orders can be returned.');
+        abort_if(!empty($order->proof_photo), 422, 'Return is not allowed after proof of delivery has been submitted.');
 
         $request->validate(['reason' => 'required|string|max:500']);
 

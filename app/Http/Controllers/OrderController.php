@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Cart, CartItem, Order, OrderItem, Product};
+use App\Models\{Cart, CartItem, Order, OrderItem, Product, FlashSaleProduct};
 use App\Models\UserVoucher;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
@@ -38,30 +38,86 @@ class OrderController extends Controller
 
         $order = null;
         DB::transaction(function () use ($cart, $request, $user, &$order) {
+            $subtotal = 0;
+
+            // Resolve flash sale prices and validate stock
+            $resolvedItems = $cart->items->map(function ($cartItem) use ($user) {
+                $product = $cartItem->product;
+                $unitPrice = $cartItem->unit_price;
+
+                // Check if there's an active approved flash sale for this product
+                $fsp = FlashSaleProduct::where('product_id', $product->id)
+                    ->where('status', 'approved')
+                    ->whereHas('flashSale', fn($q) => $q->where('active', true)
+                        ->where('start_time', '<=', now())
+                        ->where('end_time', '>=', now()))
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($fsp) {
+                    // Validate time & stock
+                    abort_if($fsp->remainingStock() < $cartItem->quantity, 422,
+                        "Not enough flash sale stock for \"{$product->name}\".");
+
+                    // Enforce per-customer limit
+                    if ($fsp->max_per_customer > 0) {
+                        $alreadyBought = OrderItem::whereHas('order', fn($q) => $q->where('user_id', $user->id)
+                                ->whereNotIn('status', ['cancelled']))
+                            ->where('product_id', $product->id)
+                            ->sum('quantity');
+
+                        abort_if(($alreadyBought + $cartItem->quantity) > $fsp->max_per_customer, 422,
+                            "Purchase limit reached for \"{$product->name}\".");
+                    }
+
+                    $unitPrice = (float) $fsp->flash_price;
+                }
+
+                return [
+                    'cartItem'  => $cartItem,
+                    'unitPrice' => $unitPrice,
+                    'fsp'       => $fsp,
+                ];
+            });
+
+            foreach ($resolvedItems as $item) {
+                $subtotal += $item['unitPrice'] * $item['cartItem']->quantity;
+            }
+
             $order = Order::create([
                 'user_id'        => $user->id,
                 'order_number'   => 'ORD-' . strtoupper(uniqid()),
                 'address_id'     => $request->address_id,
-                'subtotal'       => $cart->subtotal,
+                'subtotal'       => $subtotal,
                 'tax'            => $cart->tax ?? 0,
                 'shipping'       => $cart->shipping ?? 0,
-                'total'          => $cart->total,
+                'total'          => $subtotal + ($cart->tax ?? 0) + ($cart->shipping ?? 0),
                 'status'         => 'pending',
                 'payment_method' => $request->payment_method ?? 'cod',
             ]);
 
-            foreach ($cart->items as $cartItem) {
+            foreach ($resolvedItems as $item) {
+                $cartItem = $item['cartItem'];
+                $unitPrice = $item['unitPrice'];
+                $fsp = $item['fsp'];
+
                 OrderItem::create([
                     'order_id'    => $order->id,
                     'product_id'  => $cartItem->product_id,
                     'quantity'    => $cartItem->quantity,
-                    'unit_price'  => $cartItem->unit_price,
-                    'total_price' => $cartItem->quantity * $cartItem->unit_price,
+                    'unit_price'  => $unitPrice,
+                    'total_price' => $cartItem->quantity * $unitPrice,
                 ]);
-                $cartItem->product->decrement('stock_quantity', $cartItem->quantity);
+
+                // Decrement flash stock separately from main stock
+                if ($fsp) {
+                    $fsp->increment('sold_count', $cartItem->quantity);
+                } else {
+                    $cartItem->product->decrement('stock_quantity', $cartItem->quantity);
+                }
             }
 
-            // Mark voucher as used (one-time use)
+            // Mark voucher as used
             if ($cart->coupon_code) {
                 $coupon = Coupon::where('code', $cart->coupon_code)->first();
                 if ($coupon) {
@@ -90,5 +146,3 @@ class OrderController extends Controller
         return Inertia::render('Orders/Show', compact('order'));
     }
 }
-?>
-

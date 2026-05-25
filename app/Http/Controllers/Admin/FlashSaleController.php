@@ -4,15 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FlashSale;
+use App\Models\FlashSaleProduct;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class FlashSaleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $flashSales = FlashSale::with('creator')->latest()->paginate(20);
@@ -22,100 +20,106 @@ class FlashSaleController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $products = Product::select('id', 'name')->get();
-
-        return Inertia::render('Admin/FlashSales/Create', [
-            'products' => $products,
-        ]);
+        return Inertia::render('Admin/FlashSales/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'start_time' => 'required|date|after:now',
-            'end_time' => 'required|date|after:start_time',
-            'applicable_products' => 'nullable|array',
-            'applicable_products.*' => 'exists:products,id',
-            'active' => 'boolean',
+            'start_time'  => 'required|date',
+            'end_time'    => 'required|date|after:start_time',
+            'active'      => 'boolean',
         ]);
 
-        $validated['created_by'] = auth()->id();
-        $validated['applicable_products'] = $request->applicable_products ?: null;
+        $validated['created_by']     = auth()->id();
+        $validated['discount_type']  = 'fixed';
+        $validated['discount_value'] = 0;
 
         FlashSale::create($validated);
 
         return redirect()->route('admin.flash-sales.index')->with('success', 'Flash sale created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(FlashSale $flashSale)
     {
         $flashSale->load('creator');
-        $products = $flashSale->getApplicableProducts();
+
+        $submissions = FlashSaleProduct::where('flash_sale_id', $flashSale->id)
+            ->with(['product:id,name,price', 'seller:id,name'])
+            ->get();
 
         return Inertia::render('Admin/FlashSales/Show', [
-            'flashSale' => array_merge($flashSale->toArray(), ['products' => $products]),
+            'flashSale'   => $flashSale,
+            'submissions' => $submissions,
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(FlashSale $flashSale)
     {
-        $products = Product::select('id', 'name')->get();
-
-        return Inertia::render('Admin/FlashSales/Edit', [
-            'flashSale' => $flashSale,
-            'products' => $products,
-        ]);
+        return Inertia::render('Admin/FlashSales/Edit', compact('flashSale'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, FlashSale $flashSale)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-            'applicable_products' => 'nullable|array',
-            'applicable_products.*' => 'exists:products,id',
-            'active' => 'boolean',
+            'start_time'  => 'required|date',
+            'end_time'    => 'required|date|after:start_time',
+            'active'      => 'boolean',
         ]);
-
-        $validated['applicable_products'] = $request->applicable_products ?: null;
 
         $flashSale->update($validated);
 
         return redirect()->route('admin.flash-sales.index')->with('success', 'Flash sale updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(FlashSale $flashSale)
     {
         $flashSale->delete();
 
         return redirect()->route('admin.flash-sales.index')->with('success', 'Flash sale deleted successfully.');
+    }
+
+    // ─── Submission Actions ───────────────────────────────────────────────────
+
+    public function approveProduct(FlashSaleProduct $flashSaleProduct)
+    {
+        $flashSaleProduct->update(['status' => 'approved']);
+        return back()->with('success', 'Product approved for flash sale.');
+    }
+
+    public function rejectProduct(FlashSaleProduct $flashSaleProduct)
+    {
+        $flashSaleProduct->update(['status' => 'rejected']);
+        return back()->with('success', 'Product rejected.');
+    }
+
+    public function removeProduct(FlashSaleProduct $flashSaleProduct)
+    {
+        $flashSaleProduct->delete();
+        return back()->with('success', 'Listing removed.');
+    }
+
+    public function approveAll(FlashSale $flashSale)
+    {
+        $count = FlashSaleProduct::where('flash_sale_id', $flashSale->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'approved']);
+
+        return back()->with('success', "{$count} product(s) approved.");
+    }
+
+    public function rejectAll(FlashSale $flashSale)
+    {
+        $count = FlashSaleProduct::where('flash_sale_id', $flashSale->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'rejected']);
+
+        return back()->with('success', "{$count} product(s) rejected.");
     }
 }

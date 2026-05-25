@@ -34,6 +34,16 @@ class FlashSale extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function flashSaleProducts()
+    {
+        return $this->hasMany(FlashSaleProduct::class);
+    }
+
+    public function approvedProducts()
+    {
+        return $this->hasMany(FlashSaleProduct::class)->where('status', 'approved');
+    }
+
     public function getApplicableProducts()
     {
         if (!$this->applicable_products) {
