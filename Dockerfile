@@ -3,6 +3,15 @@ FROM node:20-alpine AS node-build
 
 WORKDIR /app
 
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apk add --no-cache php83 php83-phar php83-mbstring php83-openssl php83-tokenizer php83-xml php83-xmlwriter php83-dom php83-json
+
+# Install PHP deps first (needed for ziggy)
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
+
+# Install Node deps
 COPY package*.json ./
 RUN npm install
 
