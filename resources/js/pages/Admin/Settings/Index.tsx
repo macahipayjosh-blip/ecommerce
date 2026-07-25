@@ -11,10 +11,12 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
     const { data, setData, post, processing, errors } = useForm<Settings & {
         banner_image: File | null;
         gcash_qr_image: File | null;
+        site_logo: File | null;
     }>({
         ...settings,
         banner_image: null,
         gcash_qr_image: null,
+        site_logo: null,
     });
 
     const [bannerPreview, setBannerPreview] = useState<string | null>(
@@ -23,9 +25,13 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
     const [gcashPreview, setGcashPreview] = useState<string | null>(
         settings.gcash_qr_image ? `/storage/${settings.gcash_qr_image}` : null,
     );
+    const [logoPreview, setLogoPreview] = useState<string | null>(
+        settings.site_logo ? `/storage/${settings.site_logo}` : null,
+    );
 
     const bannerRef = useRef<HTMLInputElement>(null);
     const gcashRef  = useRef<HTMLInputElement>(null);
+    const logoRef   = useRef<HTMLInputElement>(null);
 
     function handleBanner(files: FileList | null) {
         if (!files?.[0]) return;
@@ -37,6 +43,12 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
         if (!files?.[0]) return;
         setData('gcash_qr_image', files[0]);
         setGcashPreview(URL.createObjectURL(files[0]));
+    }
+
+    function handleLogo(files: FileList | null) {
+        if (!files?.[0]) return;
+        setData('site_logo', files[0]);
+        setLogoPreview(URL.createObjectURL(files[0]));
     }
 
     function handleSubmit(e: FormEvent) {
@@ -141,6 +153,9 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                                 {field('site_name', 'Site Name', true)}
                                 {field('site_tagline', 'Site Tagline')}
                             </div>
+                            <div className="mt-6">
+                                {imageUpload('Site Logo', logoPreview, logoRef, handleLogo, 'site_logo')}
+                            </div>
                         </div>
 
                         {/* Hero Banner */}
@@ -202,15 +217,26 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                                     {field('footer_tagline', 'Tagline')}
                                 </div>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                    {field('footer_col2_title', 'Column 2 Title')}
-                                    {field('footer_col3_title', 'Column 3 Title')}
-                                    {field('footer_col4_title', 'Column 4 Title')}
+                                    {field('footer_col2_title', 'Quick Links Column Title')}
+                                    {field('footer_col3_title', 'Payments Column Title')}
+                                    {field('footer_col4_title', 'Follow Us Column Title')}
+                                </div>
+                                <div>
+                                    {field('footer_quick_links', 'Quick Links (comma-separated)')}
+                                    <p className="mt-1 text-xs text-gray-400">e.g. About Us,Track Order,FAQ</p>
+                                </div>
+                                <div>
+                                    {field('footer_payments', 'Payment Methods (comma-separated)')}
+                                    <p className="mt-1 text-xs text-gray-400">e.g. GCash,PayMaya,COD</p>
+                                </div>
+                                <div>
+                                    {field('footer_social_links', 'Social Media Links (label|url, comma-separated)')}
+                                    <p className="mt-1 text-xs text-gray-400">e.g. 📘 Facebook|https://facebook.com,📷 Instagram|https://instagram.com</p>
                                 </div>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    {field('footer_payments', 'Payment Methods (comma-separated)')}
+                                    {field('footer_copyright', 'Copyright Text')}
                                     {field('footer_contact', 'Contact Label')}
                                 </div>
-                                {field('footer_copyright', 'Copyright Text')}
                             </div>
                         </div>
 

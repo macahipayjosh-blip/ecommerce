@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\AdminRegisterController;
-use App\Http\Controllers\Auth\RiderRegisterController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -23,11 +23,6 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('rider/register/{token}', [RiderRegisterController::class, 'create'])
-        ->name('rider.register');
-
-    Route::post('rider/register/{token}', [RiderRegisterController::class, 'store']);
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
@@ -36,8 +31,11 @@ Route::middleware('guest')->group(function () {
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->name('password.email');
+    Route::post('forgot-password/send-otp', [OtpController::class, 'send'])
+        ->name('password.otp.send');
+
+    Route::post('forgot-password/verify-otp', [OtpController::class, 'verify'])
+        ->name('password.otp.verify');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');

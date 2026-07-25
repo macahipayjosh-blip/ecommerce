@@ -1,6 +1,5 @@
 import {
     BarChart2,
-    Bike,
     ClipboardList,
     CreditCard,
     Folder,
@@ -10,7 +9,6 @@ import {
     RotateCcw,
     Settings,
     ShoppingCart,
-    Store,
     Tag,
     Ticket,
     Users,
@@ -28,8 +26,6 @@ const NAV = [
         label: 'Users',
         items: [
             { name: 'Users', routeName: 'admin.users.index', icon: <Users size={15} /> },
-            { name: 'Riders', routeName: 'admin.riders.index', icon: <Bike size={15} /> },
-            { name: 'Seller Applications', routeName: 'admin.seller-applications.index', icon: <Store size={15} /> },
         ],
     },
     {

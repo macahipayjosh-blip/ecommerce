@@ -34,7 +34,6 @@ class RolePermissionSeeder extends Seeder
         $customer = Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
         $customer->syncPermissions(['manage-profile', 'view-orders']);
 
-        Role::firstOrCreate(['name' => 'rider', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'support_agent', 'guard_name' => 'web']);
     }
 }

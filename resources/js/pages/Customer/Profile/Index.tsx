@@ -23,7 +23,7 @@ export default function CustomerProfileIndex({ user }: { user: Profile }) {
     };
 
     const stats = [
-        { label: 'Total Spent',    value: `$${(user.customer_profile?.total_spent ?? 0).toFixed(2)}`, icon: <CreditCard className="h-5 w-5 text-green-500" /> },
+        { label: 'Total Spent',    value: `₱${(user.customer_profile?.total_spent ?? 0).toFixed(2)}`, icon: <CreditCard className="h-5 w-5 text-green-500" /> },
         { label: 'Loyalty Points', value: user.customer_profile?.loyalty_points ?? 0,                  icon: <Heart className="h-5 w-5 text-red-500" /> },
     ];
 

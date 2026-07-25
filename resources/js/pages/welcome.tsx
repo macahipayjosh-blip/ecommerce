@@ -1,7 +1,7 @@
 import StarRating from '@/components/StarRating';
 import { type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ChevronRight, Clock, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, User, X } from 'lucide-react';
+import { ChevronRight, Clock, Gavel, Menu, Package, ShoppingBag, ShoppingCart, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Product {
@@ -97,7 +97,11 @@ function AuctionCountdown({ endTime }: { endTime: string }) {
     const h = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
     const m = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
     const s = String(secondsLeft % 60).padStart(2, '0');
-    return <span className="font-mono font-bold text-red-500">{h}:{m}:{s}</span>;
+    return (
+        <span className="font-mono font-bold text-red-500">
+            {h}:{m}:{s}
+        </span>
+    );
 }
 
 function ProductCard({ product, isLoggedIn }: { product: Product; isLoggedIn: boolean }) {
@@ -211,7 +215,11 @@ export default function Welcome() {
                             <Menu className="h-6 w-6" />
                         </button>
                         <Link href="/" className="flex shrink-0 items-center gap-2">
-                            <Leaf className="h-8 w-8 text-[#2d6a2d]" />
+                            {s.site_logo ? (
+                                <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-15 w-15 object-contain" />
+                            ) : (
+                                <span className="text-2xl">🌿</span>
+                            )}
                             <span className="text-xl font-bold text-[#2d6a2d]">BSABShop</span>
                         </Link>
                         <nav className="hidden flex-1 items-center justify-center gap-1 overflow-x-auto sm:flex">
@@ -281,7 +289,11 @@ export default function Welcome() {
                 >
                     <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                         <div className="flex items-center gap-2">
-                            <Leaf className="h-7 w-7 text-[#2d6a2d]" />
+                            {s.site_logo ? (
+                                <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-7 w-7 object-contain" />
+                            ) : (
+                                <span className="text-xl">🌿</span>
+                            )}
                             <span className="text-lg font-bold text-[#2d6a2d]">BSABShop</span>
                         </div>
                         <button
@@ -438,7 +450,7 @@ export default function Welcome() {
                                                     )}
                                                 </div>
                                                 {p.flash_stock_left !== null && p.flash_stock_left !== undefined && (
-                                                    <div className="mt-0.5 text-xs text-red-500 font-medium">
+                                                    <div className="mt-0.5 text-xs font-medium text-red-500">
                                                         {p.flash_stock_left === 0 ? 'Sold out' : `Only ${p.flash_stock_left} left`}
                                                     </div>
                                                 )}
@@ -483,7 +495,11 @@ export default function Welcome() {
                                         >
                                             <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gray-50">
                                                 {img ? (
-                                                    <img src={`/storage/${img.image_path}`} alt={auction.name} className="h-full w-full object-cover" />
+                                                    <img
+                                                        src={`/storage/${img.image_path}`}
+                                                        alt={auction.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 ) : (
                                                     <Gavel className="h-10 w-10 text-gray-200" />
                                                 )}
@@ -494,10 +510,16 @@ export default function Welcome() {
                                             </div>
                                             <div className="p-2.5">
                                                 <p className="truncate text-xs font-semibold text-gray-800">{auction.name}</p>
-                                                <p className="text-[10px] text-gray-400">{auction.breed} • {auction.age}</p>
+                                                <p className="text-[10px] text-gray-400">
+                                                    {auction.breed} • {auction.age}
+                                                </p>
                                                 <div className="mt-1 flex items-center justify-between">
-                                                    <p className="text-sm font-bold text-[#2d6a2d]">₱{parseFloat(auction.reserve_price).toFixed(2)}</p>
-                                                    <span className="text-[10px] text-gray-400">{auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}</span>
+                                                    <p className="text-sm font-bold text-[#2d6a2d]">
+                                                        ₱{parseFloat(auction.reserve_price).toFixed(2)}
+                                                    </p>
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}
+                                                    </span>
                                                 </div>
                                                 <div className="mt-1.5 block w-full rounded-lg bg-[#2d6a2d] py-1.5 text-center text-xs font-medium text-white">
                                                     Bid Now
@@ -571,7 +593,11 @@ export default function Welcome() {
                     <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 text-sm sm:grid-cols-4">
                         <div>
                             <div className="mb-3 flex items-center gap-2">
-                                <Leaf className="h-5 w-5 text-[#4a9e4a]" />
+                                {s.site_logo ? (
+                                    <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-15 w-15 object-contain" />
+                                ) : (
+                                    <span className="text-base">🌿</span>
+                                )}
                                 <p className="font-bold text-white">{s.footer_brand || 'CPSU BSABShop'}</p>
                             </div>
                             <p className="text-xs leading-relaxed text-gray-500">
@@ -579,12 +605,11 @@ export default function Welcome() {
                             </p>
                         </div>
                         <div>
-                            <p className="mb-3 font-bold text-white">{s.footer_col2_title || 'About Us'}</p>
-                            {['About Us', 'Track Order', 'FAQ'].map((l) => (
-                                <p key={l} className="cursor-pointer py-1 text-xs transition-colors hover:text-white">
-                                    {l}
-                                </p>
-                            ))}
+                            <p className="mb-3 font-bold text-white">{s.footer_col2_title || 'Quick Links'}</p>
+                            <Link href={route('faq')} className="block py-1 text-xs transition-colors hover:text-white">FAQ</Link>
+                            <Link href={route('terms')} className="block py-1 text-xs transition-colors hover:text-white">Terms & Conditions</Link>
+                            <Link href={route('privacy')} className="block py-1 text-xs transition-colors hover:text-white">Privacy Policy</Link>
+                            <Link href={route('cookies')} className="block py-1 text-xs transition-colors hover:text-white">Cookie Policy</Link>
                         </div>
                         <div>
                             <p className="mb-3 font-bold text-white">{s.footer_col3_title || 'Payments'}</p>
@@ -596,18 +621,25 @@ export default function Welcome() {
                         </div>
                         <div>
                             <p className="mb-3 font-bold text-white">{s.footer_col4_title || 'Follow Us'}</p>
-                            <div className="flex gap-3">
-                                {['📘', '📷', '▶️', '🎵'].map((icon, i) => (
-                                    <span key={i} className="cursor-pointer text-xl transition-transform hover:scale-110">
-                                        {icon}
-                                    </span>
-                                ))}
-                            </div>
+                            {(s.footer_social_links || '📘 Facebook|#,📷 Instagram|#,▶️ YouTube|#,🎵 TikTok|#').split(',').map((entry) => {
+                                const [label, href] = entry.split('|');
+                                return (
+                                    <a key={label} href={href?.trim() || '#'} target="_blank" rel="noopener noreferrer"
+                                        className="block cursor-pointer py-1 text-xs transition-colors hover:text-white">
+                                        {label?.trim()}
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
-                    <div className="mx-auto mt-8 flex max-w-6xl justify-between border-t border-gray-800 pt-4 text-xs text-gray-600">
+                    <div className="mx-auto mt-8 flex max-w-6xl flex-wrap items-center justify-between gap-2 border-t border-gray-800 pt-4 text-xs text-gray-600">
                         <span>{s.footer_copyright || '© 2026 CPSU BSABShop. All rights reserved.'}</span>
-                        <span className="cursor-pointer transition-colors hover:text-white">{s.footer_contact || 'Contact Us'}</span>
+                        <div className="flex gap-4">
+                            <Link href={route('cookies')} className="transition-colors hover:text-white">Cookie Policy</Link>
+                            <Link href={route('terms')} className="transition-colors hover:text-white">Terms & Conditions</Link>
+                            <Link href={route('privacy')} className="transition-colors hover:text-white">Privacy Policy</Link>
+                            <span className="cursor-pointer transition-colors hover:text-white">{s.footer_contact || 'Contact Us'}</span>
+                        </div>
                     </div>
                 </footer>
             </div>

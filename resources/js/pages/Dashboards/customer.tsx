@@ -1,6 +1,21 @@
 import StarRating from '@/components/StarRating';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle, Clock, CreditCard, Gift, Gavel, Leaf, Menu, Package, ShoppingBag, ShoppingCart, Store, Tag, Truck, User, X } from 'lucide-react';
+import {
+    CheckCircle,
+    ChevronRight,
+    Clock,
+    CreditCard,
+    Gavel,
+    Gift,
+    Menu,
+    Package,
+    ShoppingBag,
+    ShoppingCart,
+    Tag,
+    Truck,
+    User,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Stats {
@@ -62,9 +77,7 @@ function ProductCard({ product }: { product: Product }) {
                 </div>
                 <div className="mb-2 flex items-center gap-2">
                     <span className="font-bold text-[#2d6a2d]">₱{price.toFixed(2)}</span>
-                    {comparePrice && comparePrice > price && (
-                        <span className="text-xs text-gray-400 line-through">₱{comparePrice.toFixed(2)}</span>
-                    )}
+                    {comparePrice && comparePrice > price && <span className="text-xs text-gray-400 line-through">₱{comparePrice.toFixed(2)}</span>}
                 </div>
                 <div className="flex gap-1.5">
                     <Link
@@ -89,7 +102,6 @@ interface Category {
     id: number;
     name: string;
     image?: string;
-    products_count: number;
 }
 
 interface FlashSale {
@@ -166,7 +178,6 @@ function Countdown({ endTime }: { endTime: string }) {
 export default function CustomerDashboard({
     stats,
     recentOrders,
-    isApprovedSeller,
     settings,
     availableVouchers,
     flashSale,
@@ -177,7 +188,6 @@ export default function CustomerDashboard({
 }: {
     stats: Stats;
     recentOrders: Order[];
-    isApprovedSeller: boolean;
     settings: Record<string, string>;
     availableVouchers: Voucher[];
     flashSale?: FlashSale | null;
@@ -188,7 +198,6 @@ export default function CustomerDashboard({
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [switching, setSwitching] = useState(false);
     const [voucherPopup, setVoucherPopup] = useState(false);
     const [claiming, setClaiming] = useState<number | null>(null);
     const [claimedIds, setClaimedIds] = useState<number[]>([]);
@@ -217,11 +226,6 @@ export default function CustomerDashboard({
 
     const s = settings ?? {};
     const dashBg = s.banner_image ? `/storage/${s.banner_image}` : null;
-
-    const switchToSeller = () => {
-        setSwitching(true);
-        router.post(route('role.switch'), {}, { onFinish: () => setSwitching(false) });
-    };
 
     const navLinks = [
         { label: 'Dashboard', href: route('dashboard') },
@@ -265,7 +269,11 @@ export default function CustomerDashboard({
                         </button>
 
                         <Link href={route('home')} className="flex shrink-0 items-center gap-2">
-                            <Leaf className="h-7 w-7 text-[#2d6a2d] sm:h-8 sm:w-8" />
+                            {s.site_logo ? (
+                                <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-15 w-15 object-contain" />
+                            ) : (
+                                <span className="text-2xl">🌿</span>
+                            )}
                             <span className="text-base font-bold text-[#2d6a2d] sm:text-xl">BSABShop</span>
                         </Link>
 
@@ -305,28 +313,6 @@ export default function CustomerDashboard({
                                                 <User className="h-4 w-4" /> My Account
                                             </Link>
                                             <div className="my-1 border-t border-gray-100" />
-                                            {isApprovedSeller ? (
-                                                <button
-                                                    onClick={() => {
-                                                        setDropdownOpen(false);
-                                                        switchToSeller();
-                                                    }}
-                                                    disabled={switching}
-                                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-[#2d6a2d] hover:bg-[#e8f5e9] disabled:opacity-50"
-                                                >
-                                                    <Store className="h-4 w-4" />
-                                                    {switching ? 'Switching…' : 'Switch to Seller'}
-                                                </button>
-                                            ) : (
-                                                <Link
-                                                    href={route('seller.application.create')}
-                                                    onClick={() => setDropdownOpen(false)}
-                                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#2d6a2d] hover:bg-[#e8f5e9]"
-                                                >
-                                                    <Store className="h-4 w-4" /> Become a Seller
-                                                </Link>
-                                            )}
-                                            <div className="my-1 border-t border-gray-100" />
                                             <Link
                                                 href={route('logout')}
                                                 method="post"
@@ -353,7 +339,11 @@ export default function CustomerDashboard({
                 >
                     <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                         <div className="flex items-center gap-2">
-                            <Leaf className="h-7 w-7 text-[#2d6a2d]" />
+                            {s.site_logo ? (
+                                <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-7 w-7 object-contain" />
+                            ) : (
+                                <span className="text-xl">🌿</span>
+                            )}
                             <span className="text-lg font-bold text-[#2d6a2d]">BSABShop</span>
                         </div>
                         <button onClick={() => setSidebarOpen(false)} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100">
@@ -425,7 +415,7 @@ export default function CustomerDashboard({
                 <div className="mx-auto max-w-6xl space-y-5 px-3 py-4 sm:space-y-8 sm:px-4 sm:py-6">
                     {/* Hero Banner */}
                     <div
-                        className="relative flex items-center overflow-hidden rounded-2xl p-5 text-white sm:p-8 min-h-[400px] "
+                        className="relative flex min-h-[400px] items-center overflow-hidden rounded-2xl p-5 text-white sm:p-8"
                         style={
                             dashBg
                                 ? { backgroundImage: `url(${dashBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -433,7 +423,7 @@ export default function CustomerDashboard({
                         }
                     >
                         {dashBg && <div className="absolute inset-0 bg-black/40" />}
-                        <div className="relative z-10  ">
+                        <div className="relative z-10">
                             <p className="mb-1 text-xs font-medium tracking-wider text-green-200 uppercase sm:text-sm">
                                 {s.dashboard_banner_subtitle || 'Welcome back'}
                             </p>
@@ -548,9 +538,12 @@ export default function CustomerDashboard({
                                 <div className="flex items-center gap-2">
                                     <Gavel className="h-5 w-5 text-[#2d6a2d]" />
                                     <h2 className="text-base font-bold text-gray-800 sm:text-lg">Live Auctions</h2>
-                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 animate-pulse">LIVE</span>
+                                    <span className="animate-pulse rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600">LIVE</span>
                                 </div>
-                                <Link href={route('auctions.show', liveAuctions[0].id)} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
+                                <Link
+                                    href={route('auctions.show', liveAuctions[0].id)}
+                                    className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm"
+                                >
                                     View all →
                                 </Link>
                             </div>
@@ -568,7 +561,11 @@ export default function CustomerDashboard({
                                         >
                                             <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gray-50 sm:h-32">
                                                 {img ? (
-                                                    <img src={`/storage/${img.image_path}`} alt={auction.name} className="h-full w-full object-cover" />
+                                                    <img
+                                                        src={`/storage/${img.image_path}`}
+                                                        alt={auction.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 ) : (
                                                     <Gavel className="h-8 w-8 text-gray-200" />
                                                 )}
@@ -578,10 +575,16 @@ export default function CustomerDashboard({
                                             </div>
                                             <div className="p-2 sm:p-2.5">
                                                 <p className="truncate text-xs font-semibold text-gray-800 sm:text-sm">{auction.name}</p>
-                                                <p className="text-[10px] text-gray-400">{auction.breed} • {auction.age}</p>
+                                                <p className="text-[10px] text-gray-400">
+                                                    {auction.breed} • {auction.age}
+                                                </p>
                                                 <div className="mt-1 flex items-center justify-between">
-                                                    <p className="text-xs font-bold text-[#2d6a2d]">₱{parseFloat(auction.reserve_price).toFixed(2)}</p>
-                                                    <span className="text-[10px] text-gray-400">{auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}</span>
+                                                    <p className="text-xs font-bold text-[#2d6a2d]">
+                                                        ₱{parseFloat(auction.reserve_price).toFixed(2)}
+                                                    </p>
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {auction.bids_count} bid{auction.bids_count !== 1 ? 's' : ''}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </Link>
@@ -593,14 +596,16 @@ export default function CustomerDashboard({
 
                     {/* Featured Categories */}
                     {featuredCategories.length > 0 && (
-                        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+                        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                             <div className="mb-4 flex items-center justify-between">
-                                <h2 className="text-base font-bold text-gray-800 sm:text-lg">Featured Categories</h2>
-                                <Link href={route('customer.products.index')} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
-                                    Browse all →
+                                <h2 className="text-lg font-bold text-gray-800">{s.categories_title || 'Featured Categories'}</h2>
+                                <Link
+                                    href={route('customer.products.index')}
+                                    className="flex items-center gap-1 text-sm font-medium text-[#2d6a2d] hover:underline"
+                                >
+                                    Browse all <ChevronRight className="h-4 w-4" />
                                 </Link>
                             </div>
-                            {/* mobile: horizontal scroll  |  sm+: centered wrap */}
                             <div className="flex gap-3 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
                                 {featuredCategories.map((cat) => (
                                     <Link
@@ -612,12 +617,11 @@ export default function CustomerDashboard({
                                             {cat.image ? (
                                                 <img src={`/storage/${cat.image}`} alt={cat.name} className="h-full w-full object-cover" />
                                             ) : (
-                                                <ShoppingBag className="h-10 w-10 text-gray-200" />
+                                                <span className="text-4xl">🌿</span>
                                             )}
                                         </div>
                                         <div className="p-2 sm:p-2.5">
                                             <p className="truncate text-xs font-medium text-gray-700 sm:text-sm">{cat.name}</p>
-                                            <p className="text-[10px] text-gray-400">{cat.products_count} items</p>
                                         </div>
                                     </Link>
                                 ))}
@@ -630,7 +634,10 @@ export default function CustomerDashboard({
                         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-base font-bold text-gray-800 sm:text-lg">Latest Products</h2>
-                                <Link href={route('customer.products.index') + '?sort=newest'} className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm">
+                                <Link
+                                    href={route('customer.products.index') + '?sort=newest'}
+                                    className="text-xs font-medium text-[#2d6a2d] hover:underline sm:text-sm"
+                                >
                                     View all →
                                 </Link>
                             </div>
@@ -717,7 +724,7 @@ export default function CustomerDashboard({
 
                 {/* Floating Voucher Widget */}
                 {visibleVouchers.length > 0 && (
-                    <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
+                    <div className="pointer-events-none fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
                         {/* Slide-up panel */}
                         <div
                             style={{
@@ -726,7 +733,7 @@ export default function CustomerDashboard({
                                 opacity: voucherPopup ? 1 : 0,
                                 pointerEvents: voucherPopup ? 'auto' : 'none',
                             }}
-                            className="w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
+                            className="pointer-events-auto w-80 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
                         >
                             {/* Panel header */}
                             <div className="flex items-center justify-between bg-gradient-to-r from-[#1a4d1a] to-[#2d6a2d] px-4 py-3">
@@ -799,7 +806,7 @@ export default function CustomerDashboard({
                         {/* Floating circle button */}
                         <button
                             onClick={() => setVoucherPopup((o) => !o)}
-                            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#2d6a2d] text-white shadow-lg transition-colors hover:bg-[#245724]"
+                            className="pointer-events-auto relative flex h-14 w-14 items-center justify-center rounded-full bg-[#2d6a2d] text-white shadow-lg transition-colors hover:bg-[#245724]"
                             title="Vouchers available"
                         >
                             <Tag className="h-6 w-6" />
@@ -815,41 +822,51 @@ export default function CustomerDashboard({
                     <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 text-sm sm:grid-cols-4 sm:gap-8">
                         <div className="col-span-2 sm:col-span-1">
                             <div className="mb-3 flex items-center gap-2">
-                                <Leaf className="h-5 w-5 text-[#4a9e4a]" />
-                                <p className="font-bold text-white">CPSU BSABShop</p>
+                                {s.site_logo ? (
+                                    <img src={`/storage/${s.site_logo}`} alt="Logo" className="h-15 w-15 object-contain" />
+                                ) : (
+                                    <span className="text-base">🌿</span>
+                                )}
+                                <p className="font-bold text-white">{s.footer_brand || 'CPSU BSABShop'}</p>
                             </div>
-                            <p className="text-xs leading-relaxed text-gray-500">A modern e-commerce platform for CPSU-BSAB students and faculty.</p>
+                            <p className="text-xs leading-relaxed text-gray-500">{s.footer_tagline || 'A modern e-commerce platform for CPSU-BSAB students and faculty.'}</p>
                         </div>
                         <div>
-                            <p className="mb-3 font-bold text-white">About Us</p>
-                            {['About Us', 'Track Order', 'FAQ'].map((l) => (
+                            <p className="mb-3 font-bold text-white">{s.footer_col2_title || 'Quick Links'}</p>
+                            <Link href={route('faq')} className="block py-1 text-xs transition-colors hover:text-white">FAQ</Link>
+                            <Link href={route('terms')} className="block py-1 text-xs transition-colors hover:text-white">Terms & Conditions</Link>
+                            <Link href={route('privacy')} className="block py-1 text-xs transition-colors hover:text-white">Privacy Policy</Link>
+                            <Link href={route('cookies')} className="block py-1 text-xs transition-colors hover:text-white">Cookie Policy</Link>
+                        </div>
+                        <div>
+                            <p className="mb-3 font-bold text-white">{s.footer_col3_title || 'Payments'}</p>
+                            {(s.footer_payments || 'GCash,PayMaya,COD').split(',').map((l) => (
                                 <p key={l} className="cursor-pointer py-1 text-xs transition-colors hover:text-white">
-                                    {l}
+                                    {l.trim()}
                                 </p>
                             ))}
                         </div>
                         <div>
-                            <p className="mb-3 font-bold text-white">Payments</p>
-                            {['GCash', 'PayMaya', 'COD'].map((l) => (
-                                <p key={l} className="cursor-pointer py-1 text-xs transition-colors hover:text-white">
-                                    {l}
-                                </p>
-                            ))}
-                        </div>
-                        <div>
-                            <p className="mb-3 font-bold text-white">Follow Us</p>
-                            <div className="flex gap-3">
-                                {['📘', '📷', '▶️', '🎵'].map((s, i) => (
-                                    <span key={i} className="cursor-pointer text-xl transition-transform hover:scale-110">
-                                        {s}
-                                    </span>
-                                ))}
-                            </div>
+                            <p className="mb-3 font-bold text-white">{s.footer_col4_title || 'Follow Us'}</p>
+                            {(s.footer_social_links || '📘 Facebook|#,📷 Instagram|#,▶️ YouTube|#,🎵 TikTok|#').split(',').map((entry) => {
+                                const [label, href] = entry.split('|');
+                                return (
+                                    <a key={label} href={href?.trim() || '#'} target="_blank" rel="noopener noreferrer"
+                                        className="block cursor-pointer py-1 text-xs transition-colors hover:text-white">
+                                        {label?.trim()}
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
-                    <div className="mx-auto mt-8 flex max-w-6xl justify-between border-t border-gray-800 pt-4 text-xs text-gray-600">
-                        <span>© 2026 CPSU BSABShop. All rights reserved.</span>
-                        <span className="cursor-pointer transition-colors hover:text-white">Contact Us</span>
+                    <div className="mx-auto mt-8 flex max-w-6xl flex-wrap items-center justify-between gap-2 border-t border-gray-800 pt-4 text-xs text-gray-600">
+                        <span>{s.footer_copyright || '© 2026 CPSU BSABShop. All rights reserved.'}</span>
+                        <div className="flex gap-4">
+                            <Link href={route('cookies')} className="transition-colors hover:text-white">Cookie Policy</Link>
+                            <Link href={route('terms')} className="transition-colors hover:text-white">Terms & Conditions</Link>
+                            <Link href={route('privacy')} className="transition-colors hover:text-white">Privacy Policy</Link>
+                            <span className="cursor-pointer transition-colors hover:text-white">{s.footer_contact || 'Contact Us'}</span>
+                        </div>
                     </div>
                 </footer>
             </div>

@@ -1,6 +1,6 @@
 import StarRating from '@/components/StarRating';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, Leaf, Package, Search, ShoppingCart, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Package, Search, ShoppingCart, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 interface Product {
@@ -34,9 +34,10 @@ interface Props {
     categories: Category[];
     brands: Brand[];
     filters: Filters;
+    settings?: Record<string, string>;
 }
 
-export default function CustomerProductsIndex({ products, categories, brands, filters }: Props) {
+export default function CustomerProductsIndex({ products, categories, brands, filters, settings }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [toast, setToast] = useState<string | null>(null);
 
@@ -107,7 +108,11 @@ export default function CustomerProductsIndex({ products, categories, brands, fi
                             <ArrowLeft className="h-5 w-5 text-[#2d6a2d]" />
                         </Link>
                         <Link href={route('home')} className="flex shrink-0 items-center gap-1.5">
-                            <Leaf className="h-6 w-6 text-[#2d6a2d]" />
+                            {settings?.site_logo ? (
+                                <img src={`/storage/${settings.site_logo}`} alt="Logo" className="h-15 w-15 object-contain" />
+                            ) : (
+                                <span className="text-xl">🌿</span>
+                            )}
                             <span className="hidden text-base font-bold text-[#2d6a2d] sm:block">BSABShop</span>
                         </Link>
                         <form onSubmit={handleSearch} className="flex min-w-0 flex-1">
@@ -320,7 +325,7 @@ export default function CustomerProductsIndex({ products, categories, brands, fi
 
                 <footer className="mt-12 border-t border-gray-800 bg-[#111] px-4 py-6">
                     <div className="mx-auto flex max-w-7xl items-center justify-between text-xs text-gray-600">
-                        <span>© 2025 CPSU BSABShop. All rights reserved.</span>
+                        <span>© 2026 CPSU BSABShop. All rights reserved.</span>
                         <span className="cursor-pointer hover:text-white">Contact Us</span>
                     </div>
                 </footer>

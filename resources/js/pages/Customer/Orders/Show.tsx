@@ -1,36 +1,24 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
-    Bike,
     CheckCircle,
     CreditCard,
     Download,
-    Mail,
+    Gavel,
     MapPin,
-    MessageCircle,
     Package,
-    Phone,
     RotateCcw,
-    Send,
     Star,
     Truck,
     X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 interface OrderItem {
     id: number;
     product: { id: number; name: string; price: number; images: { url: string; is_primary: boolean }[] };
     quantity: number;
     unit_price: number;
-}
-
-interface Message {
-    id: number;
-    sender_id: number;
-    message: string;
-    created_at: string;
-    sender: { id: number; name: string };
 }
 
 interface Address {
@@ -57,9 +45,7 @@ interface Order {
     total: number;
     items: OrderItem[];
     address?: Address;
-    rider?: { id: number; name: string; email: string; phone?: string };
     shipment?: { carrier: string; tracking_number: string; tracking_url?: string; status: string; estimated_delivery?: string };
-    messages: Message[];
     created_at: string;
     proof_photo?: string;
 }
@@ -73,36 +59,13 @@ const STATUS_COLOR: Record<string, string> = {
     refunded: 'bg-gray-100 text-gray-800',
 };
 
-export default function CustomerOrderShow({ order, reviewedProductIds, authId }: { order: Order; reviewedProductIds: number[]; authId: number }) {
+export default function CustomerOrderShow({ order, reviewedProductIds }: { order: Order; reviewedProductIds: number[]; authId: number }) {
     const [returnReason, setReturnReason] = useState('');
     const [showReturn, setShowReturn] = useState(false);
     const [reviewProductId, setReviewProductId] = useState<number | null>(null);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
     const [hoverRating, setHoverRating] = useState(0);
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const { data: chatData, setData: setChatData, post: chatPost, processing: chatProcessing, reset: chatReset } = useForm({ message: '' });
-
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [order.messages]);
-
-    function submitChat(e: React.FormEvent) {
-        e.preventDefault();
-        if (!chatData.message.trim()) return;
-
-        chatPost(route('customer.orders.message', order.id), {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                chatReset('message');
-
-                // Reload the order props so the new message persists in the DB-backed list.
-                // Note: this endpoint returns JSON, but `reload({only})` ensures Inertia fetches fresh props.
-                router.reload({ only: ['order'] });
-            },
-        });
-    }
 
     const submitReview = () => {
         if (!reviewProductId) return;
@@ -131,8 +94,10 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
         setShowReturn(false);
     };
 
-    const steps = ['pending', 'processing', 'shipped', 'delivered'];
-    const currentStep = steps.indexOf(order.status);
+    const steps = ['pending', 'confirmed', 'shipped', 'delivered'];
+    const currentStep = steps.indexOf(order.status) === -1 && order.status === 'processing'
+        ? 1
+        : steps.indexOf(order.status);
 
     return (
         <>
@@ -145,10 +110,14 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <div className="flex-1">
-                            <Link href={route('dashboard')} className="mb-1 inline-flex items-center gap-1 text-xs text-[#2d6a2d] hover:underline">
-                                <ArrowLeft className="h-3 w-3" /> Dashboard
-                            </Link>
-                            <h1 className="text-2xl font-bold text-gray-900">Order #{order.order_number}</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <h1 className="text-2xl font-bold text-gray-900">Order #{order.order_number}</h1>
+                                {order.payment_method === 'auction' && (
+                                    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#fff3e0', color: '#e65100', border: '1px solid #ffcc8044', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <Gavel size={11} /> AUCTION
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                         </div>
                         <span className={`rounded-full px-3 py-1 text-sm font-semibold ${STATUS_COLOR[order.status] ?? 'bg-gray-100 text-gray-800'}`}>
@@ -227,10 +196,10 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate font-medium text-gray-900">{item.product.name}</p>
                                                 <p className="text-sm text-gray-500">
-                                                    Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                                                    Qty: {item.quantity} × ₱{Number(item.unit_price).toFixed(2)}
                                                 </p>
                                             </div>
-                                            <p className="font-semibold text-gray-900">${(item.quantity * Number(item.unit_price)).toFixed(2)}</p>
+                                            <p className="font-semibold text-gray-900">₱{(item.quantity * Number(item.unit_price)).toFixed(2)}</p>
                                         </div>
                                     );
                                 })}
@@ -243,10 +212,10 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                                 <h2 className="mb-3 font-semibold text-gray-900">Order Summary</h2>
                                 <div className="space-y-2 text-sm">
                                     {[
-                                        ['Subtotal', `$${Number(order.subtotal).toFixed(2)}`],
-                                        ['Shipping', `$${Number(order.shipping_cost).toFixed(2)}`],
-                                        ['Tax', `$${Number(order.tax).toFixed(2)}`],
-                                        ...(order.discount > 0 ? [['Discount', `-$${Number(order.discount).toFixed(2)}`]] : []),
+                                        ['Subtotal', `₱${Number(order.subtotal).toFixed(2)}`],
+                                        ['Shipping', `₱${Number(order.shipping_cost).toFixed(2)}`],
+                                        ['Tax', `₱${Number(order.tax).toFixed(2)}`],
+                                        ...(order.discount > 0 ? [['Discount', `-₱${Number(order.discount).toFixed(2)}`]] : []),
                                     ].map(([label, value]) => (
                                         <div key={label} className="flex justify-between text-gray-600">
                                             <span>{label}</span>
@@ -255,7 +224,7 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                                     ))}
                                     <div className="flex justify-between border-t border-gray-200 pt-2 font-bold text-gray-900">
                                         <span>Total</span>
-                                        <span>${Number(order.total).toFixed(2)}</span>
+                                        <span>₱{Number(order.total).toFixed(2)}</span>
                                     </div>
                                 </div>
                                 <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
@@ -280,31 +249,6 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                                         </p>
                                         <p>{order.address.country}</p>
                                     </address>
-                                </div>
-                            )}
-
-                            {order.rider && (
-                                <div className="rounded-xl border border-purple-200 bg-purple-50 p-5 shadow-sm">
-                                    <h2 className="mb-3 flex items-center gap-2 font-semibold text-purple-900">
-                                        <Bike className="h-4 w-4 text-purple-600" /> Rider
-                                    </h2>
-                                    <p className="text-sm font-medium text-gray-900">{order.rider.name}</p>
-                                    <div className="mt-2 space-y-1">
-                                        <a
-                                            href={`mailto:${order.rider.email}`}
-                                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-purple-700"
-                                        >
-                                            <Mail className="h-3.5 w-3.5" /> {order.rider.email}
-                                        </a>
-                                        {order.rider.phone && (
-                                            <a
-                                                href={`tel:${order.rider.phone}`}
-                                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-purple-700"
-                                            >
-                                                <Phone className="h-3.5 w-3.5" /> {order.rider.phone}
-                                            </a>
-                                        )}
-                                    </div>
                                 </div>
                             )}
                         </div>
@@ -371,71 +315,6 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                         </div>
                     )}
 
-                    {/* Chat with Rider */}
-                    {order.rider && (
-                        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                            <div className="flex items-center gap-2 border-b border-gray-100 px-6 py-4">
-                                <MessageCircle className="h-5 w-5 text-purple-600" />
-                                <h2 className="font-semibold text-gray-900">Chat with Rider</h2>
-                                <span className="text-sm text-gray-500">— {order.rider.name}</span>
-                            </div>
-                            <div style={{ height: 280, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {(order.messages ?? []).length === 0 && (
-                                    <div className="mt-10 text-center text-sm text-gray-400">No messages yet. Say hello to your rider!</div>
-                                )}
-                                {(order.messages ?? []).map((msg) => {
-                                    const isMe = msg.sender_id === authId;
-                                    return (
-                                        <div
-                                            key={msg.id}
-                                            style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
-                                        >
-                                            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>
-                                                {isMe ? 'You' : msg.sender?.name} ·{' '}
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                            <div
-                                                style={{
-                                                    maxWidth: '70%',
-                                                    padding: '8px 12px',
-                                                    fontSize: 13,
-                                                    lineHeight: 1.5,
-                                                    borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                                                    background: isMe ? '#7c3aed' : '#f3f4f6',
-                                                    color: isMe ? '#fff' : '#111827',
-                                                }}
-                                            >
-                                                {msg.message}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                <div ref={bottomRef} />
-                            </div>
-                            <form onSubmit={submitChat} style={{ display: 'flex', gap: 8, padding: '12px 24px', borderTop: '1px solid #f3f4f6' }}>
-                                <input
-                                    value={chatData.message}
-                                    onChange={(e) => setChatData('message', e.target.value)}
-                                    placeholder="Message your rider…"
-                                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            submitChat(e as any);
-                                        }
-                                    }}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={chatProcessing || !chatData.message.trim()}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-                                >
-                                    <Send className="h-4 w-4" />
-                                </button>
-                            </form>
-                        </div>
-                    )}
-
                     {/* Reviews — only for delivered orders */}
                     {order.status === 'delivered' && (
                         <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -473,7 +352,6 @@ export default function CustomerOrderShow({ order, reviewedProductIds, authId }:
                                     <h3 className="text-sm font-semibold text-gray-900">
                                         Reviewing: {order.items.find((i) => i.product.id === reviewProductId)?.product.name}
                                     </h3>
-                                    {/* Star rating */}
                                     <div className="flex items-center gap-1">
                                         {[1, 2, 3, 4, 5].map((s) => (
                                             <button

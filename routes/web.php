@@ -13,8 +13,6 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ActivityController;
-use App\Http\Controllers\Admin\RiderManagementController;
-use App\Http\Controllers\Auth\RiderRegisterController;
 use App\Http\Controllers\Admin\PaymentMonitoringController;
 use App\Http\Controllers\Admin\ReturnManagementController;
 use App\Http\Controllers\Admin\ReportsController;
@@ -27,12 +25,14 @@ use App\Http\Controllers\Customer\VoucherController;
 use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\ProductMessageController;
-use App\Http\Controllers\Rider\RiderController;
 use App\Http\Controllers\ProfileController as SharedProfileController;
 use App\Http\Controllers\RoleSwitchController;
-use App\Http\Controllers\SellerApplicationController;
 
 Route::get('/', [\App\Http\Controllers\ProductController::class, 'welcome'])->name('home');
+Route::get('/cookies', fn() => Inertia::render('CookiePolicy'))->name('cookies');
+Route::get('/terms', fn() => Inertia::render('TermsAndConditions'))->name('terms');
+Route::get('/privacy', fn() => Inertia::render('PrivacyPolicy'))->name('privacy');
+Route::get('/faq', fn() => Inertia::render('FAQ'))->name('faq');
 
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::get('/auctions/{product}', [\App\Http\Controllers\AuctionController::class, 'show'])->name('auctions.show');
@@ -43,10 +43,6 @@ Route::middleware('auth')->group(function () {
 
     // ─── Role Switch ──────────────────────────────────────────────────────────
     Route::post('role/switch', [RoleSwitchController::class, 'switch'])->name('role.switch');
-
-    // ─── Seller Application ───────────────────────────────────────────────────
-    Route::get('seller-application', [SellerApplicationController::class, 'create'])->name('seller.application.create');
-    Route::post('seller-application', [SellerApplicationController::class, 'store'])->name('seller.application.store');
 
     // ─── Shared Dashboard (role-based redirect) ───────────────────────────────
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -111,6 +107,7 @@ Route::middleware('auth')->group(function () {
         Route::get('auctions', [\App\Http\Controllers\Seller\AuctionController::class, 'index'])->name('auctions.index');
         Route::get('auctions/create', [\App\Http\Controllers\Seller\AuctionController::class, 'create'])->name('auctions.create');
         Route::post('auctions', [\App\Http\Controllers\Seller\AuctionController::class, 'store'])->name('auctions.store');
+        Route::post('auctions/{auction}/place-order', [\App\Http\Controllers\Seller\AuctionController::class, 'placeOrder'])->name('auctions.placeOrder');
         Route::get('auctions/{auction}', [\App\Http\Controllers\Seller\AuctionController::class, 'show'])->name('auctions.show');
         Route::get('auctions/{auction}/edit', [\App\Http\Controllers\Seller\AuctionController::class, 'edit'])->name('auctions.edit');
         Route::put('auctions/{auction}', [\App\Http\Controllers\Seller\AuctionController::class, 'update'])->name('auctions.update');
@@ -125,6 +122,7 @@ Route::middleware('auth')->group(function () {
         // Orders
         Route::get('orders', [SellerOrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
+        Route::get('orders/{order}/invoice', [SellerOrderController::class, 'invoice'])->name('orders.invoice');
         Route::patch('orders/{order}/status', [SellerOrderController::class, 'updateStatus'])->name('orders.status');
 
         // Inventory
@@ -217,22 +215,11 @@ Route::middleware('auth')->group(function () {
         // Activity Logs
         Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
 
-        // Riders
-        Route::get('riders', [RiderManagementController::class, 'index'])->name('riders.index');
-        Route::post('riders/{user}/approve', [RiderRegisterController::class, 'approve'])->name('riders.approve');
-        Route::post('riders/{user}/decline', [RiderRegisterController::class, 'decline'])->name('riders.decline');
-
         // Payments
         Route::get('payments', [PaymentMonitoringController::class, 'index'])->name('payments.index');
 
         // Returns
         Route::get('returns', [ReturnManagementController::class, 'index'])->name('returns.index');
-
-        // Seller Applications
-        Route::get('seller-applications', [SellerApplicationController::class, 'index'])->name('seller-applications.index');
-        Route::get('seller-applications/{sellerApplication}', [SellerApplicationController::class, 'show'])->name('seller-applications.show');
-        Route::post('seller-applications/{sellerApplication}/approve', [SellerApplicationController::class, 'approve'])->name('seller-applications.approve');
-        Route::post('seller-applications/{sellerApplication}/decline', [SellerApplicationController::class, 'decline'])->name('seller-applications.decline');
 
         // Flash Sales
         Route::resource('flash-sales', FlashSaleController::class);
@@ -246,32 +233,6 @@ Route::middleware('auth')->group(function () {
         Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     });
 
-    // ─── Rider Routes ─────────────────────────────────────────────────────────
-    Route::middleware('role:rider')->prefix('rider')->name('rider.')->group(function () {
-        Route::get('dashboard',                          [RiderController::class, 'dashboard'])->name('dashboard');
-        Route::get('pickup',                             [RiderController::class, 'pickup'])->name('pickup');
-        Route::patch('pickup/{order}/confirm',           [RiderController::class, 'confirmPickup'])->name('pickup.confirm');
-        Route::get('pickup/{order}/confirm',             fn() => redirect()->route('rider.pickup'));
-        Route::get('handling',                           [RiderController::class, 'handling'])->name('handling');
-        Route::patch('handling/{order}',                 [RiderController::class, 'updateHandling'])->name('handling.update');
-        Route::get('navigation',                         [RiderController::class, 'navigation'])->name('navigation');
-        Route::patch('navigation/{order}/deliver',       [RiderController::class, 'markDelivered'])->name('navigation.deliver');
-        Route::get('app-interaction',                    [RiderController::class, 'appInteraction'])->name('app-interaction');
-        Route::patch('app-interaction/{order}',          [RiderController::class, 'updateStatus'])->name('app-interaction.update');
-        Route::get('communication',                      [RiderController::class, 'communication'])->name('communication');
-        Route::post('communication/{order}/message',      [RiderController::class, 'sendMessage'])->name('communication.message');
-        Route::get('payment',                            [RiderController::class, 'payment'])->name('payment');
-        Route::patch('payment/{order}/collect',          [RiderController::class, 'collectPayment'])->name('payment.collect');
-        Route::get('proof',                              [RiderController::class, 'proof'])->name('proof');
-        Route::post('proof/{order}/upload',              [RiderController::class, 'uploadProof'])->name('proof.upload');
-        Route::get('time',                               [RiderController::class, 'timeManagement'])->name('time');
-        Route::get('vehicle',                            [RiderController::class, 'vehicle'])->name('vehicle');
-        Route::post('vehicle/checklist',                 [RiderController::class, 'saveChecklist'])->name('vehicle.checklist');
-        Route::get('compliance',                         [RiderController::class, 'compliance'])->name('compliance');
-        Route::get('returns',                            [RiderController::class, 'returns'])->name('returns');
-        Route::patch('returns/{order}/submit',           [RiderController::class, 'submitReturn'])->name('returns.submit');
-        Route::get('performance',                        [RiderController::class, 'performance'])->name('performance');
-    });
 });
 
 require __DIR__.'/settings.php';

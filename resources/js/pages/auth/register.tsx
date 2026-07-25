@@ -24,9 +24,12 @@ export default function Register() {
 
     const [showPw, setShowPw] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [agreed, setAgreed] = useState(false);
+    const [agreeError, setAgreeError] = useState(false);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!agreed) { setAgreeError(true); return; }
         post(route('register'), { onFinish: () => reset('password', 'password_confirmation') });
     };
 
@@ -184,6 +187,25 @@ export default function Register() {
                                         </button>
                                     </div>
                                     {errors.password_confirmation && <p className="mt-0.5 text-xs text-red-500">{errors.password_confirmation}</p>}
+                                </div>
+
+                                {/* Agreement */}
+                                <div className="pt-1">
+                                    <label className="flex items-start gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={agreed}
+                                            onChange={e => { setAgreed(e.target.checked); setAgreeError(false); }}
+                                            className="mt-0.5 h-4 w-4 rounded border-[#b8d890] accent-[#2d6a2d] shrink-0"
+                                        />
+                                        <span className="text-xs leading-relaxed" style={{ color: '#6a8a6a' }}>
+                                            I agree to the{' '}
+                                            <a href={route('terms')} target="_blank" className="font-semibold hover:underline" style={{ color: '#3a8a3a' }}>Terms & Conditions</a>,{' '}
+                                            <a href={route('privacy')} target="_blank" className="font-semibold hover:underline" style={{ color: '#3a8a3a' }}>Privacy Policy</a>, and{' '}
+                                            <a href={route('cookies')} target="_blank" className="font-semibold hover:underline" style={{ color: '#3a8a3a' }}>Cookie Policy</a>.
+                                        </span>
+                                    </label>
+                                    {agreeError && <p className="mt-1 text-xs text-red-500">You must agree to the policies to register.</p>}
                                 </div>
 
                                 {/* Submit */}

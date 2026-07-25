@@ -31,7 +31,6 @@ use HasFactory, Notifiable, HasRoles;
         'phone',
         'role',
         'profile_picture',
-        'rider_checklist',
         'is_verified',
         'is_active',
     ];
@@ -56,8 +55,12 @@ use HasFactory, Notifiable, HasRoles;
         return [
             'email_verified_at'  => 'datetime',
             'password'           => 'hashed',
-            'rider_checklist'    => 'array',
         ];
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
     }
 
     public function orders()
@@ -78,10 +81,5 @@ use HasFactory, Notifiable, HasRoles;
     public function sellerProfile()
     {
         return $this->hasOne(SellerProfile::class);
-    }
-
-    public function riderProfile()
-    {
-        return $this->hasOne(RiderProfile::class);
     }
 }

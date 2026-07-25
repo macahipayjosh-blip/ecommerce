@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Printer } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface OrderItem { id: number; product: { name: string }; quantity: number; unit_price: number }
 interface Order {
@@ -8,7 +9,6 @@ interface Order {
     items: OrderItem[];
     user: { name: string; email: string };
     address?: { full_name: string; address_line1: string; city: string; state: string; postal_code: string; country: string };
-    rider?: { name: string; phone: string; rider_profile?: { vehicle_type: string; license_number: string } };
     created_at: string;
 }
 
@@ -21,9 +21,6 @@ export default function CustomerOrderInvoice({ order }: { order: Order }) {
                 <div className="mx-auto mb-6 flex max-w-3xl items-center gap-4 print:hidden">
                     <Link href={route('customer.orders.show', order.id)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-200">
                         <ArrowLeft className="h-5 w-5" />
-                    </Link>
-                    <Link href={route('dashboard')} className="inline-flex items-center gap-1 text-sm text-[#2d6a2d] hover:underline">
-                        <ArrowLeft className="h-4 w-4" /> Back to Dashboard
                     </Link>
                     <button
                         onClick={() => window.print()}
@@ -66,35 +63,6 @@ export default function CustomerOrderInvoice({ order }: { order: Order }) {
                         )}
                     </div>
 
-                    {/* Rider info */}
-                    {order.rider && (
-                        <div className="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">🛵 Delivery Rider</h3>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-gray-500">Name</span>
-                                    <p className="font-semibold text-gray-900">{order.rider.name}</p>
-                                </div>
-                                <div>
-                                    <span className="text-gray-500">Phone</span>
-                                    <p className="font-semibold text-gray-900">{order.rider.phone ?? '—'}</p>
-                                </div>
-                                {order.rider.rider_profile && (
-                                    <>
-                                        <div>
-                                            <span className="text-gray-500">Vehicle Type</span>
-                                            <p className="font-semibold text-gray-900">{order.rider.rider_profile.vehicle_type}</p>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">License Number</span>
-                                            <p className="font-semibold text-gray-900">{order.rider.rider_profile.license_number}</p>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Items table */}
                     <table className="w-full mb-8">
                         <thead>
@@ -110,8 +78,8 @@ export default function CustomerOrderInvoice({ order }: { order: Order }) {
                                 <tr key={item.id}>
                                     <td className="py-3 text-sm text-gray-900">{item.product.name}</td>
                                     <td className="py-3 text-right text-sm text-gray-600">{item.quantity}</td>
-                                    <td className="py-3 text-right text-sm text-gray-600">${Number(item.unit_price).toFixed(2)}</td>
-                                    <td className="py-3 text-right text-sm font-medium text-gray-900">${(item.quantity * Number(item.unit_price)).toFixed(2)}</td>
+                                    <td className="py-3 text-right text-sm text-gray-600">₱{Number(item.unit_price).toFixed(2)}</td>
+                                    <td className="py-3 text-right text-sm font-medium text-gray-900">₱{(item.quantity * Number(item.unit_price)).toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -121,23 +89,34 @@ export default function CustomerOrderInvoice({ order }: { order: Order }) {
                     <div className="flex justify-end">
                         <div className="w-64 space-y-2 text-sm">
                             {[
-                                ['Subtotal', `$${Number(order.subtotal).toFixed(2)}`],
-                                ['Shipping', `$${Number(order.shipping_cost).toFixed(2)}`],
-                                ['Tax', `$${Number(order.tax).toFixed(2)}`],
-                                ...(order.discount > 0 ? [['Discount', `-$${Number(order.discount).toFixed(2)}`]] : []),
+                                ['Subtotal', `₱${Number(order.subtotal).toFixed(2)}`],
+                                ['Shipping', `₱${Number(order.shipping_cost).toFixed(2)}`],
+                                ['Tax', `₱${Number(order.tax).toFixed(2)}`],
+                                ...(order.discount > 0 ? [['Discount', `-₱${Number(order.discount).toFixed(2)}`]] : []),
                             ].map(([label, value]) => (
                                 <div key={label} className="flex justify-between text-gray-600">
                                     <span>{label}</span><span>{value}</span>
                                 </div>
                             ))}
                             <div className="flex justify-between border-t-2 border-gray-900 pt-2 text-base font-bold text-gray-900">
-                                <span>Total</span><span>${Number(order.total).toFixed(2)}</span>
+                                <span>Total</span><span>₱{Number(order.total).toFixed(2)}</span>
                             </div>
                             <p className="text-xs text-gray-500 capitalize">Payment: {order.payment_method}</p>
                         </div>
                     </div>
 
-                    <p className="mt-10 text-center text-xs text-gray-400">Thank you for your purchase!</p>
+                    {/* QR Code */}
+                    <div className="mt-10 flex flex-col items-center gap-2 border-t border-gray-100 pt-8">
+                        <QRCodeSVG
+                            value={`${window.location.origin}/customer/orders/${order.id}`}
+                            size={96}
+                            bgColor="#ffffff"
+                            fgColor="#111827"
+                            level="M"
+                        />
+                        <p className="text-xs text-gray-400">Scan to view order #{order.order_number}</p>
+                    </div>
+                    <p className="mt-4 text-center text-xs text-gray-400">Thank you for your purchase!</p>
                 </div>
             </div>
         </>

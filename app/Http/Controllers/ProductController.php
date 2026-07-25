@@ -111,8 +111,9 @@ class ProductController extends Controller
         $filters    = array_merge(['search' => '', 'category' => '', 'brand' => '', 'sort' => ''], array_filter($input));
 
         $view = Auth::user()?->hasRole('customer') ? 'Customer/Products/Index' : 'Shop/AllProducts';
+        $settings = SettingsController::all();
 
-        return Inertia::render($view, compact('products', 'categories', 'brands', 'filters'));
+        return Inertia::render($view, compact('products', 'categories', 'brands', 'filters', 'settings'));
     }
 
     public function adminIndex(Request $request)
@@ -210,7 +211,8 @@ class ProductController extends Controller
             ]);
 
         $view = Auth::user()?->hasRole('customer') ? 'Customer/Products/Show' : 'Products/Show';
-        return Inertia::render($view, compact('product', 'messages', 'similarProducts'));
+        $settings = SettingsController::all();
+        return Inertia::render($view, compact('product', 'messages', 'similarProducts', 'settings'));
     }
 
     public function create()

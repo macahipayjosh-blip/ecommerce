@@ -19,7 +19,9 @@ interface Order {
     order_number: string;
     status: string;
     payment_status: string;
+    auction_fee?: number;
     total: number;
+    proof_photo?: string | null;
     items: OrderItem[];
     shipment?: {
         tracking_number: string;
@@ -29,15 +31,24 @@ interface Order {
     created_at: string;
 }
 
+interface NotificationItem {
+    id: string;
+    order_id: number | null;
+    product_name: string | null;
+    message: string;
+    created_at?: string;
+}
+
 interface OrdersIndexProps {
     orders: {
         data: Order[];
         links: any[];
         meta?: { total?: number };
     };
+    auctionNotifications?: NotificationItem[];
 }
 
-export default function OrdersIndex({ orders }: OrdersIndexProps) {
+export default function OrdersIndex({ orders, auctionNotifications = [] }: OrdersIndexProps) {
     const [statusFilter, setStatusFilter] = useState('all');
 
     const getStatusIcon = (status: string) => {
@@ -68,8 +79,18 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
     };
 
     const canReturn = (order: Order) => {
-        return order.status === 'delivered';
+        return order.status === 'delivered' && !order.proof_photo;
     };
+
+    const filteredOrders = (orders.data ?? []).filter((order) => {
+        if (statusFilter === 'all') return true;
+        if (statusFilter === 'auction') {
+            return order.order_number.startsWith('AUCTION-') || (order.auction_fee ?? 0) > 0;
+        }
+        return order.status === statusFilter;
+    });
+
+    const auctionCount = (orders.data ?? []).filter((order) => order.order_number.startsWith('AUCTION-') || (order.auction_fee ?? 0) > 0).length;
 
     return (
         <>
@@ -128,13 +149,23 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                             </div>
                         </div>
                     </div>
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="flex items-center">
+                            <Clock className="h-8 w-8 text-amber-500" />
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500">Auction Orders</p>
+                                <p className="text-2xl font-bold text-gray-900">{auctionCount}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Filter */}
                 <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                     <div className="flex items-center space-x-4">
-                        <label className="text-sm font-medium text-gray-700">Filter by status:</label>
+                        <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700">Filter by status:</label>
                         <select
+                            id="statusFilter"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -145,13 +176,39 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                             <option value="shipped">Shipped</option>
                             <option value="delivered">Delivered</option>
                             <option value="cancelled">Cancelled</option>
+                            <option value="auction">Auction Orders</option>
                         </select>
                     </div>
                 </div>
 
+                {/* Auction Notifications */}
+                {auctionNotifications && auctionNotifications.length > 0 && (
+                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-yellow-900">Auction updates</h2>
+                                <p className="text-sm text-yellow-700">You have new auction order notifications.</p>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            {auctionNotifications.map((notification) => (
+                                <div key={notification.id} className="rounded-xl bg-white p-4 shadow-sm border border-yellow-100">
+                                    <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                                    <p className="text-sm text-gray-500">{notification.product_name}</p>
+                                    {notification.order_id && (
+                                        <Link href={route('customer.orders.show', notification.order_id)} className="mt-3 inline-flex items-center text-sm text-yellow-700 hover:underline">
+                                            View auction order
+                                        </Link>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Orders List */}
                 <div className="space-y-6">
-                    {(orders.data ?? []).map((order) => (
+                    {filteredOrders.map((order) => (
                         <div key={order.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                             {/* Order Header */}
                             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
@@ -164,6 +221,11 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                                             <p className="text-sm text-gray-500">
                                                 Placed on {new Date(order.created_at).toLocaleDateString()}
                                             </p>
+                                            {(order.order_number.startsWith('AUCTION-') || (order.auction_fee ?? 0) > 0) && (
+                                                <span className="mt-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                                    Auction Order
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             {getStatusIcon(order.status)}
@@ -173,7 +235,7 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-lg font-bold text-gray-900">${Number(order.total).toFixed(2)}</p>
+                                        <p className="text-lg font-bold text-gray-900">₱{Number(order.total).toFixed(2)}</p>
                                         <p className="text-sm text-gray-500">{order.items.length} items</p>
                                     </div>
                                 </div>
@@ -204,7 +266,7 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                                                     {item.product.name}
                                                 </p>
                                                 <p className="text-sm text-gray-500">
-                                                    Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                                                    Qty: {item.quantity} × ₱{Number(item.unit_price).toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
@@ -273,19 +335,25 @@ export default function OrdersIndex({ orders }: OrdersIndexProps) {
                 </div>
 
                 {/* Empty State */}
-                {(orders.data ?? []).length === 0 && (
+                {filteredOrders.length === 0 && (
                     <div className="text-center py-12">
                         <Package className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
-                        <p className="mt-1 text-sm text-gray-500">You haven't placed any orders yet.</p>
-                        <div className="mt-6">
-                            <Link
-                                href={route('customer.products.index')}
-                                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Start Shopping
-                            </Link>
-                        </div>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {statusFilter === 'all'
+                                ? "You haven't placed any orders yet."
+                                : 'No orders match the selected filter.'}
+                        </p>
+                        {statusFilter === 'all' && (
+                            <div className="mt-6">
+                                <Link
+                                    href={route('customer.products.index')}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                >
+                                    Start Shopping
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 )}
 

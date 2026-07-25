@@ -49,6 +49,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        if ($user->hasRole('rider')) {
+            $profile = $user->riderProfile;
+            if (! $profile || $profile->status !== 'approved') {
+                Auth::logout();
+                RateLimiter::hit($this->throttleKey());
+                throw ValidationException::withMessages([
+                    'email' => 'Your rider application is pending admin approval. Please wait for confirmation.',
+                ]);
+            }
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

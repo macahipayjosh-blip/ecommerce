@@ -22,7 +22,7 @@ return new class extends Migration
                 $table->timestamp('auction_end_at')->nullable()->after('auction_start_at');
             }
             if (!Schema::hasColumn('products', 'automatic_extend_minutes')) {
-                $table->unsignedSmallInteger('automatic_extend_minutes')->default(5)->after('auction_end_at');
+                $table->unsignedSmallInteger('automatic_extend_minutes')->default(0)->after('auction_end_at');
             }
             if (!Schema::hasColumn('products', 'breed')) {
                 $table->string('breed')->nullable()->after('description');

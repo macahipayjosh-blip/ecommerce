@@ -1,6 +1,6 @@
 import StarRating from '@/components/StarRating';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, ChevronDown, ChevronUp, Heart, Leaf, MessageCircle, Minus, Package, Plus, Send, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ChevronDown, ChevronUp, Heart, MessageCircle, Minus, Package, Plus, Send, ShoppingCart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Message {
@@ -43,10 +43,12 @@ export default function CustomerProductShow({
     product,
     messages: initialMessages = [],
     similarProducts = [],
+    settings,
 }: {
     product: Product;
     messages?: Message[];
     similarProducts?: SimilarProduct[];
+    settings?: Record<string, string>;
 }) {
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -150,7 +152,10 @@ export default function CustomerProductShow({
                             <ArrowLeft className="h-5 w-5 text-[#2d6a2d]" />
                         </Link>
                         <Link href={route('home')} className="flex shrink-0 items-center gap-2">
-                            <Leaf className="h-7 w-7 text-[#2d6a2d]" />
+                            {settings?.site_logo
+                                ? <img src={`/storage/${settings.site_logo}`} alt="Logo" className="h-7 w-7 object-contain" />
+                                : <span className="text-xl">🌿</span>
+                            }
                             <span className="text-lg font-bold text-[#2d6a2d]">BSABShop</span>
                         </Link>
                         <div className="flex-1" />

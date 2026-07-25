@@ -3,7 +3,6 @@ import { Head, Link } from '@inertiajs/react';
 import {
     AlertTriangle,
     BarChart3,
-    Bike,
     CalendarDays,
     CheckCircle,
     ClipboardList,
@@ -35,7 +34,6 @@ interface Stats {
     processingOrders: number;
     totalCustomers: number;
     totalSellers: number;
-    totalRiders: number;
     lowStock: number;
     failedPayments: number;
     newUsersToday: number;
@@ -200,7 +198,6 @@ export default function AdminDashboard({
         { label: 'Pending Orders', value: stats.pendingOrders, accent: 'amber', icon: <Clock size={20} />, trend: 'down', trendText: 'Needs action' },
         { label: 'Customers', value: stats.totalCustomers, accent: 'green', icon: <Users size={20} />, trend: 'up', trendText: 'Registered' },
         { label: 'Sellers', value: stats.totalSellers, accent: 'teal', icon: <Store size={20} />, trend: 'up', trendText: 'Active' },
-        { label: 'Riders', value: stats.totalRiders, accent: 'blue', icon: <Bike size={20} />, trend: 'ok', trendText: 'Available' },
         { label: 'Low Stock', value: stats.lowStock, accent: 'amber', icon: <AlertTriangle size={20} />, trend: 'ok', trendText: 'All stocked' },
         {
             label: 'Failed Payments',
@@ -620,7 +617,6 @@ export default function AdminDashboard({
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                         {[
                             { icon: Users, label: 'Users', href: route('admin.users.index') },
-                            { icon: Bike, label: 'Riders', href: route('admin.riders.index') },
                             { icon: ShoppingBag, label: 'Orders', href: route('admin.orders.index') },
                             { icon: Package, label: 'Products', href: route('admin.products.index') },
                             { icon: FolderOpen, label: 'Categories', href: route('admin.categories.index') },

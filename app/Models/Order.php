@@ -12,7 +12,6 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'vendor_id',
-        'rider_id',
         'order_number',
         'status',
         'payment_method',
@@ -21,7 +20,7 @@ class Order extends Model
         'subtotal',
         'tax',
         'shipping',
-        'rider_fee',
+        'auction_fee',
         'total',
         'notes',
         'address_id',
@@ -34,7 +33,6 @@ class Order extends Model
         'subtotal'           => 'decimal:2',
         'tax'                => 'decimal:2',
         'shipping'           => 'decimal:2',
-        'rider_fee'          => 'decimal:2',
         'total'              => 'decimal:2',
         'payment_collected'  => 'boolean',
         'seller_credited'    => 'boolean',
@@ -59,11 +57,6 @@ class Order extends Model
     public function seller()
     {
         return $this->belongsTo(User::class, 'vendor_id');
-    }
-
-    public function rider()
-    {
-        return $this->belongsTo(User::class, 'rider_id');
     }
 
     public function shipment()

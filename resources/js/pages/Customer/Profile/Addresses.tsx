@@ -16,18 +16,28 @@ interface Address {
     is_default: boolean;
 }
 
-export default function Addresses({ addresses }: { addresses: Address[] }) {
+interface User {
+    name: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+}
+
+export default function Addresses({ addresses, user }: { addresses: Address[]; user: User }) {
     const [showForm, setShowForm] = useState(false);
+
+    const defaultFullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name;
+    const defaultPhone = user.phone ?? '';
 
     const { data, setData, post, processing, errors, reset } = useForm({
         type: 'shipping' as 'shipping' | 'billing',
-        full_name: '', phone: '', address_line1: '', address_line2: '',
+        full_name: defaultFullName, phone: defaultPhone, address_line1: '', address_line2: '',
         city: '', state: '', postal_code: '', country: 'Philippines', is_default: false,
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('customer.addresses.store'), { onSuccess: () => { reset(); setShowForm(false); } });
+        post(route('customer.addresses.store'), { onSuccess: () => { reset('address_line1', 'address_line2', 'city', 'state', 'postal_code'); setShowForm(false); } });
     };
 
     return (
@@ -71,6 +81,9 @@ export default function Addresses({ addresses }: { addresses: Address[] }) {
                                                 <option value="shipping">Shipping</option>
                                                 <option value="billing">Billing</option>
                                             </select>
+                                        ) : (field === 'full_name' && defaultFullName) || (field === 'phone' && defaultPhone) ? (
+                                            <input type={type} value={data[field] as string} readOnly
+                                                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 cursor-not-allowed" />
                                         ) : (
                                             <input type={type} value={data[field] as string}
                                                 onChange={e => setData(field, e.target.value)}
@@ -91,7 +104,7 @@ export default function Addresses({ addresses }: { addresses: Address[] }) {
                                     {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                                     Save Address
                                 </button>
-                                <button type="button" onClick={() => { reset(); setShowForm(false); }}
+                                <button type="button" onClick={() => { setData({ type: 'shipping', full_name: defaultFullName, phone: defaultPhone, address_line1: '', address_line2: '', city: '', state: '', postal_code: '', country: 'Philippines', is_default: false }); setShowForm(false); }}
                                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                     Cancel
                                 </button>

@@ -26,9 +26,15 @@ const Field = ({ label, error, children }: { label: string; error?: string; chil
 
 const inputStyle = { width: '100%', border: '1px solid #e8e8e4', padding: '9px 12px', fontSize: 14, outline: 'none' };
 
+const generateCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const rand = (n: number) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `${rand(4)}-${rand(4)}`;
+};
+
 export default function PromotionForm({ coupon, submitRoute, method = 'post', breadcrumb, title }: Props) {
     const { data, setData, submit, processing, errors } = useForm({
-        code:        coupon?.code ?? '',
+        code:        coupon?.code ?? generateCode(),
         type:        coupon?.type ?? 'percentage',
         value:       coupon?.value ?? '',
         valid_from:  coupon?.valid_from ? coupon.valid_from.slice(0, 10) : '',
@@ -51,8 +57,14 @@ export default function PromotionForm({ coupon, submitRoute, method = 'post', br
 
             <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
                 <Field label="Voucher Code" error={errors.code}>
-                    <input value={data.code} onChange={e => setData('code', e.target.value.toUpperCase())}
-                        placeholder="e.g. SAVE20" style={{ ...inputStyle, ...M, letterSpacing: '0.1em' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <input value={data.code} onChange={e => setData('code', e.target.value.toUpperCase())}
+                            style={{ ...inputStyle, ...M, letterSpacing: '0.1em', flex: 1 }} />
+                        <button type="button" onClick={() => setData('code', generateCode())}
+                            style={{ padding: '9px 12px', border: '1px solid #e8e8e4', background: '#f5f5f3', fontSize: 11, ...M, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            ↺ Regenerate
+                        </button>
+                    </div>
                 </Field>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>

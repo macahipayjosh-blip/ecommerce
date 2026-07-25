@@ -17,13 +17,13 @@ export default function SellerDashboard({ stats, recentOrders, lowStockProducts 
     };
 
     const metrics = [
-        { label: "Today's Sales",  value: `$${stats.todaySales.toFixed(2)}`,  icon: <DollarSign className="h-5 w-5" />,  delta: null },
-        { label: 'Month Sales',    value: `$${stats.monthSales.toFixed(2)}`,  icon: <TrendingUp className="h-5 w-5" />,  delta: null },
+        { label: "Today's Sales",  value: `₱${stats.todaySales.toFixed(2)}`,  icon: <DollarSign className="h-5 w-5" />,  delta: null },
+        { label: 'Month Sales',    value: `₱${stats.monthSales.toFixed(2)}`,  icon: <TrendingUp className="h-5 w-5" />,  delta: null },
         { label: 'Total Orders',   value: stats.totalOrders,                  icon: <ShoppingCart className="h-5 w-5" />, delta: null },
         { label: 'Pending Orders', value: stats.pendingOrders,                icon: <AlertTriangle className="h-5 w-5" />, delta: null },
         { label: 'Total Products', value: stats.totalProducts,                icon: <Package className="h-5 w-5" />,     delta: null },
         { label: 'Low Stock',      value: stats.lowStock,                     icon: <AlertTriangle className="h-5 w-5" />, delta: null },
-        { label: 'Balance',        value: `$${stats.balance.toFixed(2)}`,     icon: <Wallet className="h-5 w-5" />,      delta: null },
+        { label: 'Balance',        value: `₱${stats.balance.toFixed(2)}`,     icon: <Wallet className="h-5 w-5" />,      delta: null },
     ];
 
     return (

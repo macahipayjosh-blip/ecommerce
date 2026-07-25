@@ -1,9 +1,11 @@
 import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
+import SplashScreen from './components/SplashScreen';
 import { initializeTheme } from './hooks/use-appearance';
 import { Ziggy as ZiggyStatic } from './ziggy';
 
@@ -12,6 +14,32 @@ declare global {
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+const PROTECTED = ['/dashboard', '/admin', '/seller', '/rider', '/customer', '/profile'];
+const isProtected = (url: string) => PROTECTED.some((p) => url.startsWith(p));
+
+// Intercept every Inertia navigation (including back button)
+router.on('navigate', (event) => {
+    const page = (event as any).detail?.page;
+    const user = page?.props?.auth?.user;
+    const url  = page?.url ?? window.location.pathname;
+
+    if (!user && isProtected(url)) {
+        event.preventDefault();
+        window.location.replace('/login');
+    }
+});
+
+// Also intercept before the visit resolves
+router.on('before', (event) => {
+    const url = (event as any).detail?.visit?.url?.pathname ?? '';
+    const user = (window as any).__inertia_auth_user__;
+
+    if (user === false && isProtected(url)) {
+        event.preventDefault();
+        window.location.replace('/login');
+    }
+});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -31,7 +59,19 @@ createInertiaApp({
             }
         };
 
-        root.render(<App {...props} />);
+        const siteLogo = (props.initialPage?.props as any)?.site_logo ?? null;
+
+        function AppWithSplash() {
+            const [ready, setReady] = useState(false);
+            return (
+                <>
+                    {!ready && <SplashScreen onDone={() => setReady(true)} siteLogo={siteLogo} />}
+                    <App {...props} />
+                </>
+            );
+        }
+
+        root.render(<AppWithSplash />);
     },
     progress: {
         color: '#4B5563',

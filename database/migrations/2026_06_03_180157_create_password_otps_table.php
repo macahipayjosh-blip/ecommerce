@@ -8,17 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('rider_profiles', function (Blueprint $table) {
+        Schema::create('password_otps', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('vehicle_type');
-            $table->string('license_number');
+            $table->string('email')->index();
+            $table->string('otp', 6);
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('rider_profiles');
+        Schema::dropIfExists('password_otps');
     }
 };

@@ -53,7 +53,15 @@ export default function BrandCreate() {
                                 id="logo"
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => setData('logo', e.target.files?.[0] ?? null)}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] ?? null;
+                                    if (file && file.size > 2048 * 1024) {
+                                        e.target.value = '';
+                                        alert('The logo must not be greater than 2MB.');
+                                        return;
+                                    }
+                                    setData('logo', file);
+                                }}
                                 className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm file:mr-4 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-blue-700"
                             />
                             {errors.logo && <p className="mt-1 text-sm text-red-500">{errors.logo}</p>}

@@ -174,7 +174,7 @@ export default function AdminUserShow({ user, roles }: { user: UserProfile; role
                                                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                                     </span>
                                                 </td>
-                                                <td style={{ fontWeight: 600 }}>${Number(order.total).toFixed(2)}</td>
+                                                <td style={{ fontWeight: 600 }}>₱{Number(order.total).toFixed(2)}</td>
                                                 <td>
                                                     <Link href={route('admin.orders.show', order.id)} className="btn btn-secondary btn-sm">View</Link>
                                                 </td>
@@ -190,8 +190,7 @@ export default function AdminUserShow({ user, roles }: { user: UserProfile; role
                 {/* Right Sidebar */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-                    {/* Access & Role — hidden for riders */}
-                    {role !== 'rider' && (
+                    {/* Access & Role */}
                     <div className="card">
                         <div className="card-header">
                             <span className="card-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -224,7 +223,6 @@ export default function AdminUserShow({ user, roles }: { user: UserProfile; role
                             </div>
                         </div>
                     </div>
-                    )}
 
                     {/* Customer Summary */}
                     {user.customer_profile && (
@@ -232,7 +230,7 @@ export default function AdminUserShow({ user, roles }: { user: UserProfile; role
                             <div className="card-header"><span className="card-title">Customer Summary</span></div>
                             <div>
                                 {[
-                                    ['Total Spent',    `$${Number(user.customer_profile.total_spent).toFixed(2)}`],
+                                    ['Total Spent',    `₱${Number(user.customer_profile.total_spent).toFixed(2)}`],
                                     ['Loyalty Points', user.customer_profile.loyalty_points.toLocaleString()],
                                 ].map(([label, value]) => (
                                     <div key={label as string} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -251,7 +249,7 @@ export default function AdminUserShow({ user, roles }: { user: UserProfile; role
                             <div>
                                 {[
                                     ['Store Name', user.vendor_profile.store_name],
-                                    ['Balance',    `$${Number(user.vendor_profile.balance).toFixed(2)}`],
+                                    ['Balance',    `₱${Number(user.vendor_profile.balance).toFixed(2)}`],
                                 ].map(([label, value]) => (
                                     <div key={label as string} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
                                         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label as string}</span>

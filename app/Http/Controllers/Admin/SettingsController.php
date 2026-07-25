@@ -28,14 +28,17 @@ class SettingsController extends Controller
         'footer_brand'                 => 'CPSU BSABShop',
         'footer_tagline'               => 'A modern e-commerce platform for CPSU-BSAB students and faculty.',
         'footer_col2_title'            => 'Quick Links',
+        'footer_quick_links'           => 'About Us,Track Order,FAQ',
         'footer_col3_title'            => 'Payments',
         'footer_payments'              => 'GCash,PayMaya,COD',
         'footer_col4_title'            => 'Follow Us',
+        'footer_social_links'          => '📘 Facebook|#,📷 Instagram|#,▶️ YouTube|#,🎵 TikTok|#',
         'footer_copyright'             => '© 2025 CPSU BSABShop. All rights reserved.',
         'footer_contact'               => 'Contact Us',
         'gcash_qr_image'               => '',
         'gcash_number'                 => '',
         'gcash_name'                   => '',
+        'site_logo'                    => '',
     ];
 
     public static function all(): array
@@ -60,6 +63,7 @@ class SettingsController extends Controller
             'banner_image'           => 'nullable|image|max:4096',
             'dashboard_banner_image' => 'nullable|image|max:4096',
             'gcash_qr_image'         => 'nullable|image|max:2048',
+            'site_logo'              => 'nullable|image|max:2048',
         ]);
 
         $allowed = array_keys(self::$defaults);
@@ -69,7 +73,7 @@ class SettingsController extends Controller
             }
         }
 
-        foreach (['banner_image', 'gcash_qr_image'] as $imgKey) {
+        foreach (['banner_image', 'gcash_qr_image', 'site_logo'] as $imgKey) {
             if ($request->hasFile($imgKey)) {
                 $old = Setting::get($imgKey);
                 if ($old) {

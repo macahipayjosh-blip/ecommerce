@@ -9,7 +9,6 @@ use App\Models\Coupon;
 use App\Models\FlashSale;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\SellerApplication;
 use App\Models\UserVoucher;
 use Inertia\Inertia;
 
@@ -34,10 +33,6 @@ class CustomerDashboardController extends Controller
             ->take(5)
             ->get();
 
-        $isApprovedSeller = SellerApplication::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->exists();
-
         $claimedIds = UserVoucher::where('user_id', $user->id)->pluck('coupon_id');
 
         $availableVouchers = Coupon::where('active', true)
@@ -45,6 +40,7 @@ class CustomerDashboardController extends Controller
             ->where(fn($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()))
             ->where(fn($q) => $q->whereNull('claim_limit')->orWhereColumn('claimed_count', '<', 'claim_limit'))
             ->whereNotIn('id', $claimedIds)
+            ->where(fn($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', '!=', $user->id))
             ->get(['id', 'code', 'type', 'value', 'min_order_amount', 'valid_to', 'claim_limit', 'claimed_count']);
 
         $flashSale = FlashSale::where('active', true)
@@ -71,11 +67,7 @@ class CustomerDashboardController extends Controller
             ->take(4)
             ->get();
 
-        $featuredCategories = Category::withCount(['products' => fn($q) => $q->where('status', 'active')])
-            ->having('products_count', '>', 0)
-            ->orderByDesc('products_count')
-            ->take(6)
-            ->get(['id', 'name', 'image']);
+        $featuredCategories = Category::select('id', 'name', 'image')->get();
 
         $latestProducts = Product::with([
                 'images' => fn($q) => $q->where('is_primary', true)->select('id', 'product_id', 'image_path'),
@@ -89,6 +81,6 @@ class CustomerDashboardController extends Controller
             ->take(8)
             ->get(['id', 'name', 'price', 'compare_at_price', 'stock_quantity', 'category_id']);
 
-        return Inertia::render('Dashboards/customer', compact('stats', 'recentOrders', 'isApprovedSeller', 'availableVouchers', 'flashSale', 'flashSaleProducts', 'liveAuctions', 'featuredCategories', 'latestProducts') + ['settings' => SettingsController::all()]);
+        return Inertia::render('Dashboards/customer', compact('stats', 'recentOrders', 'availableVouchers', 'flashSale', 'flashSaleProducts', 'liveAuctions', 'featuredCategories', 'latestProducts') + ['settings' => SettingsController::all()]);
     }
 }

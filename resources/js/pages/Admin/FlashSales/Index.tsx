@@ -89,7 +89,6 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                         <thead>
                             <tr>
                                 <th>Title</th>
-                                <th>Discount</th>
                                 <th>Duration</th>
                                 <th>Status</th>
                                 <th>Created By</th>
@@ -103,7 +102,6 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                                         <td>
                                             <div className="text-primary font-semibold">{fs.title}</div>
                                         </td>
-                                        <td className="text-secondary">{formatDiscount(fs)}</td>
                                         <td className="text-muted text-sm">
                                             {new Date(fs.start_time).toLocaleDateString('en-GB')} -{' '}
                                             {new Date(fs.end_time).toLocaleDateString('en-GB')}
@@ -117,7 +115,10 @@ export default function FlashSalesIndex({ flashSales }: { flashSales: { data: Fl
                                         <td className="text-muted text-sm">{fs.creator?.name}</td>
                                         <td>
                                             <div className="flex gap-2">
-                                                <Link href={route('admin.flash-sales.show', { flash_sale: fs.id })} className="btn btn-secondary btn-sm">
+                                                <Link
+                                                    href={route('admin.flash-sales.show', { flash_sale: fs.id })}
+                                                    className="btn btn-secondary btn-sm"
+                                                >
                                                     <Eye size={13} /> View
                                                 </Link>
                                                 <button

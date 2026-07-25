@@ -22,6 +22,7 @@ class VoucherController extends Controller
             ->where(fn($q) => $q->whereNull('valid_from')->orWhere('valid_from', '<=', now()))
             ->where(fn($q) => $q->whereNull('claim_limit')->orWhereColumn('claimed_count', '<', 'claim_limit'))
             ->whereNotIn('id', $claimedIds)
+            ->where(fn($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', '!=', $userId))
             ->get(['id', 'code', 'type', 'value', 'min_order_amount', 'valid_to', 'claim_limit', 'claimed_count']);
 
         $claimed = UserVoucher::with('coupon')
@@ -56,6 +57,9 @@ class VoucherController extends Controller
         }
         if ($coupon->claim_limit && $coupon->claimed_count >= $coupon->claim_limit) {
             return back()->with('error', 'This voucher is fully claimed.');
+        }
+        if ($coupon->vendor_id && $coupon->vendor_id === $userId) {
+            return back()->with('error', 'You cannot claim your own voucher.');
         }
         if (UserVoucher::where('user_id', $userId)->where('coupon_id', $coupon->id)->exists()) {
             return back()->with('error', 'You have already claimed this voucher.');

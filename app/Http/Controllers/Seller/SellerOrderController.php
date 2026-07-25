@@ -21,16 +21,26 @@ class SellerOrderController extends Controller
 
     public function index(Request $request)
     {
-        $status = $request->validate(['status' => 'nullable|in:pending,confirmed,shipped,delivered,cancelled,paid'])['status'] ?? null;
+        $status        = $request->validate(['status' => 'nullable|in:pending,confirmed,shipped,delivered,cancelled,paid'])['status'] ?? null;
+        $auctionStatus = $request->validate(['auction_status' => 'nullable|in:pending,confirmed,shipped,delivered,cancelled,paid'])['auction_status'] ?? null;
 
-        $orders = $this->sellerOrderQuery()
+        $base        = fn() => $this->sellerOrderQuery()->where('payment_method', '!=', 'auction');
+        $auctionBase = fn() => $this->sellerOrderQuery()->where('payment_method', 'auction');
+
+        $orders = $base()
             ->with(['user:id,name,email', 'items.product:id,name,price', 'items.product.images'])
             ->when($status, fn($q, $s) => $q->where('status', $s))
             ->latest()
-            ->paginate(15)
+            ->paginate(15, ['*'], 'page')
             ->withQueryString();
 
-        $base = fn() => $this->sellerOrderQuery();
+        $auctionOrders = $auctionBase()
+            ->with(['user:id,name,email', 'items.product:id,name,price,is_auction', 'items.product.images'])
+            ->when($auctionStatus, fn($q, $s) => $q->where('status', $s))
+            ->latest()
+            ->paginate(15, ['*'], 'auction_page')
+            ->withQueryString();
+
         $statusCounts = [
             'all'       => $base()->count(),
             'pending'   => $base()->where('status', 'pending')->count(),
@@ -40,7 +50,15 @@ class SellerOrderController extends Controller
             'cancelled' => $base()->where('status', 'cancelled')->count(),
         ];
 
-        return Inertia::render('Seller/Orders/Index', compact('orders', 'statusCounts'));
+        $auctionStatusCounts = [
+            'all'       => $auctionBase()->count(),
+            'confirmed' => $auctionBase()->where('status', 'confirmed')->count(),
+            'shipped'   => $auctionBase()->where('status', 'shipped')->count(),
+            'delivered' => $auctionBase()->where('status', 'delivered')->count(),
+            'cancelled' => $auctionBase()->where('status', 'cancelled')->count(),
+        ];
+
+        return Inertia::render('Seller/Orders/Index', compact('orders', 'statusCounts', 'auctionOrders', 'auctionStatusCounts'));
     }
 
     public function show(Order $order)
@@ -49,7 +67,7 @@ class SellerOrderController extends Controller
         $hasAccess = $order->vendor_id === $sellerId
             || $order->items()->whereHas('product', fn($p) => $p->where('vendor_id', $sellerId))->exists();
         abort_if(!$hasAccess, 403);
-        $order->load(['customer', 'items.product.images', 'address', 'rider.riderProfile']);
+        $order->load(['customer', 'items.product.images', 'address']);
 
         return Inertia::render('Seller/Orders/Show', [
             'order' => array_merge($order->toArray(), [
@@ -57,14 +75,23 @@ class SellerOrderController extends Controller
                 'shipping_address' => $order->address,
                 'shipping_cost'    => $order->shipping,
                 'payment_status'   => $order->payment_collected ? 'paid' : 'pending',
-                'rider'            => $order->rider ? [
-                    'name'         => $order->rider->name,
-                    'phone'        => $order->rider->phone,
-                    'rider_profile' => $order->rider->riderProfile ? [
-                        'vehicle_type'   => $order->rider->riderProfile->vehicle_type,
-                        'license_number' => $order->rider->riderProfile->license_number,
-                    ] : null,
-                ] : null,
+            ]),
+        ]);
+    }
+
+    public function invoice(Order $order)
+    {
+        $sellerId = auth()->id();
+        $hasAccess = $order->vendor_id === $sellerId
+            || $order->items()->whereHas('product', fn($p) => $p->where('vendor_id', $sellerId))->exists();
+        abort_if(!$hasAccess, 403);
+        $order->load(['customer', 'items.product', 'address']);
+
+        return Inertia::render('Seller/Orders/Invoice', [
+            'order' => array_merge($order->toArray(), [
+                'customer'         => $order->customer ? ['name' => $order->customer->name, 'email' => $order->customer->email] : null,
+                'shipping_address' => $order->address,
+                'shipping_cost'    => $order->shipping,
             ]),
         ]);
     }

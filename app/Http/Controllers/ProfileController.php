@@ -11,7 +11,7 @@ class ProfileController extends Controller
 {
     public function show(Request $request)
     {
-        $user = $request->user()->load(['roles', 'customerProfile', 'sellerProfile', 'riderProfile']);
+        $user = $request->user()->load(['roles', 'customerProfile', 'sellerProfile']);
         $role = $user->getRoleNames()->first();
 
         $profileAddress = Address::where('user_id', $user->id)
@@ -32,13 +32,6 @@ class ProfileController extends Controller
                 'total_orders'   => \App\Models\Order::where('vendor_id', $user->id)->count(),
                 'balance'        => (float) ($user->sellerProfile?->balance ?? 0),
                 'store_name'     => $user->sellerProfile?->store_name ?? '',
-            ];
-        } elseif ($role === 'rider') {
-            $stats = [
-                'total_deliveries' => \App\Models\Order::where('rider_id', $user->id)->count(),
-                'delivered'        => \App\Models\Order::where('rider_id', $user->id)->where('status', 'delivered')->count(),
-                'vehicle_type'     => $user->riderProfile?->vehicle_type ?? '—',
-                'license_number'   => $user->riderProfile?->license_number ?? '—',
             ];
         } elseif (in_array($role, ['admin'])) {
             $stats = [

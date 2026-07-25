@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderMessage;
 use App\Models\Review;
+use App\Notifications\AuctionSaleConfirmedNotification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,11 +15,24 @@ class CustomerOrderController extends Controller
     public function index()
     {
         $orders = Order::where('user_id', auth()->id())
-            ->with(['items.product:id,name,price', 'items.product.images', 'shipment'])
+            ->with(['items.product', 'items.product.images', 'shipment'])
             ->latest()
             ->paginate(10);
 
-        return Inertia::render('Customer/Orders/Index', compact('orders'));
+        $auctionNotifications = auth()->user()->unreadNotifications()
+            ->where('type', AuctionSaleConfirmedNotification::class)
+            ->get()
+            ->map(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'order_id' => $notification->data['order_id'] ?? null,
+                    'product_name' => $notification->data['product_name'] ?? null,
+                    'message' => $notification->data['message'] ?? 'You have a new auction notification.',
+                    'created_at' => $notification->created_at?->toDateTimeString(),
+                ];
+            });
+
+        return Inertia::render('Customer/Orders/Index', compact('orders', 'auctionNotifications'));
     }
 
     public function show(Order $order)
@@ -26,7 +40,6 @@ class CustomerOrderController extends Controller
         abort_if($order->user_id !== auth()->id(), 403);
 
         $order->load(['items.product.images', 'shipment', 'address', 'seller' => fn($q) => $q->select('id','name','email')]);
-        $order->load(['rider' => fn($q) => $q->select('id','name','email','phone')]);
         $order->load(['messages.sender:id,name']);
 
         $reviewedProductIds = \App\Models\Review::where('user_id', auth()->id())
@@ -117,14 +130,14 @@ class CustomerOrderController extends Controller
     public function invoice(Order $order)
     {
         abort_if($order->user_id !== auth()->id(), 403);
-        $order->load(['items.product.images', 'address', 'user', 'rider.riderProfile']);
+        $order->load(['items.product.images', 'address', 'user']);
 
         return Inertia::render('Customer/Orders/Invoice', compact('order'));
     }
 
     public function sendMessage(Order $order, Request $request)
     {
-        abort_if($order->user_id !== auth()->id() && $order->rider_id !== auth()->id(), 403);
+        abort_if($order->user_id !== auth()->id(), 403);
         $request->validate(['message' => 'required|string|max:1000']);
 
         OrderMessage::create([

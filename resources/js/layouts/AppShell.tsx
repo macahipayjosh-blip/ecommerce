@@ -168,7 +168,7 @@ html, body { height: 100%; background: var(--bg-page); }
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 22px 20px 20px;
+    padding: 0px 10px 10px;
     border-bottom: 1px solid var(--gray-100);
     flex-shrink: 0;
     text-decoration: none;
@@ -580,7 +580,10 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
         riderProfile?: { full_name?: string; delivery_partner_role?: string };
         adminProfile?: { full_name?: string; role?: string };
         unreadMessages?: number;
+        site_logo?: string;
     }>().props;
+
+    const siteLogo = (usePage().props as any).site_logo as string | undefined;
 
     // ── Flash toast ──────────────────────────────────────────────────────────
     const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
@@ -606,6 +609,15 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
             .join('')
             .slice(0, 2)
             .toUpperCase() ?? roleLabel[0];
+
+    useEffect(() => {
+        // Store auth state globally so router.on('before') can read it
+        (window as any).__inertia_auth_user__ = auth?.user ?? false;
+
+        if (!auth?.user) {
+            window.location.replace('/login');
+        }
+    }, [auth]);
 
     useEffect(() => {
         const close = (e: KeyboardEvent) => {
@@ -639,11 +651,8 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
             <aside className={`ap-sidebar ${open ? 'open' : ''}`}>
                 {/* Brand Area */}
                 <div className="ap-logo">
-                    <div className="ap-logo-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 9 10 8M12 12c0-5 5-8 10-8-1 5-4 9-10 8" />
-                        </svg>
-                    </div>
+                    <img src={siteLogo ? `/storage/${siteLogo}` : '/logo.svg'} alt="BSABShop" className="h-15 w-15 object-contain" />
+
                     <span className="ap-logo-name">BSABShop</span>
                     <span className="ap-logo-badge">{roleLabel}</span>
                 </div>
@@ -663,7 +672,18 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                                     <span className="ap-nav-icon">{item.icon}</span>
                                     {item.name}
                                     {item.badge && item.badge > 0 ? (
-                                        <span style={{ marginLeft: 'auto', background: '#e53e3e', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700, lineHeight: '16px' }}>
+                                        <span
+                                            style={{
+                                                marginLeft: 'auto',
+                                                background: '#e53e3e',
+                                                color: '#fff',
+                                                borderRadius: 20,
+                                                padding: '1px 7px',
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                lineHeight: '16px',
+                                            }}
+                                        >
                                             {item.badge}
                                         </span>
                                     ) : null}

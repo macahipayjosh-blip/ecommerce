@@ -31,7 +31,6 @@ class AdminDashboardController extends Controller
             'processingOrders' => Order::where('status', 'confirmed')->count(),
             'totalCustomers'   => User::role('customer')->count(),
             'totalSellers'     => User::role('seller')->count(),
-            'totalRiders'      => User::role('rider')->count(),
             'lowStock'         => Product::whereColumn('stock_quantity', '<=', 'low_stock_threshold')->count(),
             'failedPayments'   => PaymentTransaction::where('status', 'failed')->count(),
             'newUsersToday'    => User::whereDate('created_at', $today)->count(),
@@ -76,7 +75,6 @@ class AdminDashboardController extends Controller
         $roleBreakdown = [
             ['role' => 'Customers',      'count' => $roleCount('customer')],
             ['role' => 'Sellers',        'count' => $roleCount('seller')],
-            ['role' => 'Riders',         'count' => $roleCount('rider')],
             ['role' => 'Support Agents', 'count' => $roleCount('support_agent')],
             ['role' => 'Admins',         'count' => $roleCount('admin')],
         ];

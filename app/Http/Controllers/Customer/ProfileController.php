@@ -65,7 +65,8 @@ class ProfileController extends Controller
     public function addresses()
     {
         $addresses = Address::where('user_id', auth()->id())->get();
-        return Inertia::render('Customer/Profile/Addresses', compact('addresses'));
+        $user = auth()->user()->load('customerProfile');
+        return Inertia::render('Customer/Profile/Addresses', compact('addresses', 'user'));
     }
 
     public function storeAddress(Request $request)

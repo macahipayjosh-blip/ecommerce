@@ -88,14 +88,18 @@ class AuctionController extends Controller
     {
         abort_unless($auction->vendor_id === auth()->id() && $auction->is_auction, 403);
 
-        if (in_array($auction->auction_status, ['live', 'pending']) && $auction->auction_end_at && now()->gt($auction->auction_end_at)) {
+        // Auto-settle when auction time has elapsed and not yet settled
+        if (in_array($auction->auction_status, ['live', 'pending', 'ended'])
+            && $auction->auction_end_at
+            && now()->gt($auction->auction_end_at)
+        ) {
             try {
                 $admin = \App\Models\User::role('admin')->first();
                 app(AuctionService::class)->settleAuction($auction, $admin);
-                $auction->refresh();
             } catch (\Throwable $e) {
-                $auction->update(['auction_status' => 'ended']);
+                report($e);
             }
+            $auction->refresh();
         }
 
         $auction->load([
@@ -103,7 +107,18 @@ class AuctionController extends Controller
             'bids' => fn($q) => $q->orderByDesc('amount'),
             'bids.user:id,name,email',
         ]);
-        return Inertia::render('Seller/Auctions/Show', compact('auction'));
+
+        // Find the order created for this auction (if settled)
+        $order = null;
+        if ($auction->auction_status === 'settled') {
+            $order = \App\Models\Order::whereHas('items', fn($q) => $q->where('product_id', $auction->id))
+                ->select('id', 'order_number', 'status', 'total', 'user_id', 'created_at')
+                ->with('user:id,name,email')
+                ->latest()
+                ->first();
+        }
+
+        return Inertia::render('Seller/Auctions/Show', compact('auction', 'order'));
     }
 
     public function edit(Product $auction)
@@ -166,6 +181,26 @@ class AuctionController extends Controller
         }
 
         return redirect()->route('seller.auctions.index')->with('success', 'Auction updated successfully.');
+    }
+
+    public function placeOrder(Product $auction)
+    {
+        abort_unless($auction->vendor_id === auth()->id() && $auction->is_auction, 403);
+        abort_unless(in_array($auction->auction_status, ['live', 'pending', 'ended']), 422, 'Auction is already settled.');
+
+        try {
+            $admin = \App\Models\User::role('admin')->first();
+            $order = app(AuctionService::class)->settleAuction($auction, $admin);
+            $auction->refresh();
+
+            if ($order) {
+                return redirect()->route('seller.orders.show', $order)->with('success', 'Auction order placed successfully. Order #' . $order->order_number);
+            }
+
+            return back()->with('error', 'Cannot place order: No valid bids or bid does not meet reserve price.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Failed to place order: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Product $auction)

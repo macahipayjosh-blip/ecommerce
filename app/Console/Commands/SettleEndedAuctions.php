@@ -17,7 +17,7 @@ class SettleEndedAuctions extends Command
         $admin = User::role('admin')->first();
 
         $ended = Product::where('is_auction', true)
-            ->whereIn('auction_status', ['live', 'pending'])
+            ->whereIn('auction_status', ['live', 'pending', 'ended'])
             ->where('auction_end_at', '<=', now())
             ->get();
 

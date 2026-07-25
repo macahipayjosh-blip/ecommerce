@@ -34,6 +34,12 @@ export default function CreateProduct({ categories, brands }: { categories: Cate
     const [previews, setPreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const generateSku = (name: string) => {
+        const prefix = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'SKU';
+        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `${prefix}-${rand}`;
+    };
+
     const handleImages = (files: FileList | null) => {
         if (!files) return;
         const newFiles = Array.from(files).slice(0, 8 - data.images.length);
@@ -92,7 +98,11 @@ export default function CreateProduct({ categories, brands }: { categories: Cate
                     <div style={{ ...sectionBody, display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div>
                             <label style={labelStyle}>Product Name <span style={{ color: '#a32d2d' }}>*</span></label>
-                            <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required style={inputStyle(!!errors.name)} placeholder="Enter product name" />
+                            <input type="text" value={data.name} onChange={(e) => {
+                                const name = e.target.value;
+                                setData('name', name);
+                                if (!data.sku) setData('sku', generateSku(name));
+                            }} required style={inputStyle(!!errors.name)} placeholder="Enter product name" />
                             {errors.name && <p style={{ fontSize: 12, color: '#a32d2d', marginTop: 4 }}>{errors.name}</p>}
                         </div>
                         <div>
@@ -148,7 +158,6 @@ export default function CreateProduct({ categories, brands }: { categories: Cate
                         {[
                             { label: 'Stock Quantity', key: 'stock_quantity' as const, required: true },
                             { label: 'Low Stock Threshold', key: 'low_stock_threshold' as const },
-                            { label: 'SKU', key: 'sku' as const, type: 'text' },
                         ].map(({ label, key, required, type }) => (
                             <div key={key}>
                                 <label style={labelStyle}>{label} {required && <span style={{ color: '#a32d2d' }}>*</span>}</label>
@@ -156,6 +165,17 @@ export default function CreateProduct({ categories, brands }: { categories: Cate
                                 {errors[key] && <p style={{ fontSize: 12, color: '#a32d2d', marginTop: 4 }}>{errors[key]}</p>}
                             </div>
                         ))}
+                        <div>
+                            <label style={labelStyle}>SKU</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <input type="text" value={data.sku} onChange={(e) => setData('sku', e.target.value)} style={{ ...inputStyle(!!errors.sku), flex: 1 }} placeholder="Auto-generated" />
+                                <button type="button" onClick={() => setData('sku', generateSku(data.name))}
+                                    style={{ padding: '8px 10px', border: '1px solid #e8e8e4', background: '#f5f5f3', fontSize: 11, fontFamily: "'DM Mono', monospace", cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                    ↺ Regenerate
+                                </button>
+                            </div>
+                            {errors.sku && <p style={{ fontSize: 12, color: '#a32d2d', marginTop: 4 }}>{errors.sku}</p>}
+                        </div>
                     </div>
                 </div>
 

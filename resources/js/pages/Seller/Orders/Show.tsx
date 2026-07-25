@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, CreditCard, MapPin, Package, Truck, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, MapPin, Package, Printer, Truck, User } from 'lucide-react';
 import SellerLayout from '@/layouts/SellerLayout';
 
 interface OrderItem { id: number; product?: { name: string; images?: { url: string; is_primary: boolean }[] }; quantity: number; unit_price: number }
@@ -9,7 +9,7 @@ interface Order {
     items: OrderItem[];
     customer: { name: string; email: string };
     shipping_address?: { full_name: string; address_line1: string; city: string; state: string; postal_code: string; country: string };
-    rider?: { name: string; phone?: string; rider_profile?: { vehicle_type: string; license_number: string } };
+    rider?: never;
     created_at: string;
 }
 
@@ -52,6 +52,10 @@ export default function VendorOrderShow({ order }: { order: Order }) {
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} />
                     {order.status}
                 </span>
+                <Link href={route('seller.orders.invoice', order.id)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#0d0d0d', color: '#fff', fontSize: 12, textDecoration: 'none', fontFamily: "'DM Mono', monospace", letterSpacing: '0.05em' }}>
+                    <Printer className="h-3.5 w-3.5" /> Invoice
+                </Link>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
@@ -132,23 +136,6 @@ export default function VendorOrderShow({ order }: { order: Order }) {
                         </div>
                     )}
 
-                    {/* Rider */}
-                    {order.rider && (
-                        <div style={sectionStyle}>
-                            <div style={sectionHead}>
-                                <Truck className="h-4 w-4" style={{ color: '#b0afa8' }} />
-                                <span style={sectionTitle}>Rider</span>
-                            </div>
-                            <div style={sectionBody}>
-                                {[['Name', order.rider.name], ['Phone', order.rider.phone ?? '—'], ...(order.rider.rider_profile ? [['Vehicle', order.rider.rider_profile.vehicle_type], ['License', order.rider.rider_profile.license_number]] : [])].map(([l, v]) => (
-                                    <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#6e6d67', marginBottom: 8 }}>
-                                        <span>{l}</span>
-                                        <span style={{ fontFamily: "'DM Mono', monospace", color: '#0d0d0d', fontWeight: 500 }}>{v}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 

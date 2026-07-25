@@ -4,19 +4,35 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\AuctionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class OrderManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['user', 'seller', 'items.product'])
-            ->latest()
-            ->paginate(20);
+        $query = Order::with(['user', 'seller', 'items.product'])->latest();
+
+        // Auto-settle auctions before showing auction order list so ended auctions create orders.
+        $type = $request->query('type', 'all');
+        if ($type === 'auction') {
+            $admin = \App\Models\User::role('admin')->first();
+            if ($admin) {
+                app(AuctionService::class)->settleEndedAuctions($admin);
+            }
+
+            $query->where(function ($q) {
+                $q->where('order_number', 'like', 'AUCTION-%')
+                  ->orWhere('auction_fee', '>', 0);
+            });
+        }
+
+        $orders = $query->paginate(20)->appends($request->only('type'));
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
+            'filterType' => $type,
         ]);
     }
 

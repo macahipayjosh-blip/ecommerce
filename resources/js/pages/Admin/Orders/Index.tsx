@@ -16,8 +16,9 @@ const PAY_BADGE: Record<string, string> = {
     paid: 'badge-green', pending: 'badge-yellow', failed: 'badge-red', refunded: 'badge-gray',
 };
 
-export default function AdminOrders({ orders }: {
+export default function AdminOrders({ orders, filterType }: {
     orders: { data: Order[]; links: any[]; meta: any };
+    filterType?: string;
 }) {
     const updateStatus = (id: number, status: string) => router.patch(route('admin.orders.status', id), { status });
 
@@ -52,9 +53,12 @@ export default function AdminOrders({ orders }: {
             </div>
 
             <div className="card">
-                <div className="card-header">
-                    <span className="card-title">All Orders</span>
-
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <Link href={route('admin.orders.index')} className={`btn ${(!filterType || filterType === 'all') ? 'btn-primary' : 'btn-outline'}`}>All Orders</Link>
+                        <Link href={route('admin.orders.index', { type: 'auction' })} className={`${filterType === 'auction' ? 'btn-primary' : 'btn-outline'}`}>Auction Orders</Link>
+                    </div>
+                    <span className="card-title">{filterType === 'auction' ? 'Auction Orders' : 'All Orders'}</span>
                 </div>
                 <div className="table-wrap">
                     <table className="ap-table">

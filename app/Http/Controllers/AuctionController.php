@@ -15,7 +15,7 @@ class AuctionController extends Controller
         abort_unless($product->is_auction, 404);
 
         // Auto-settle when time has passed
-        if (in_array($product->auction_status, ['live', 'pending']) && $product->auction_end_at && now()->gt($product->auction_end_at)) {
+        if (in_array($product->auction_status, ['live', 'pending', 'ended']) && $product->auction_end_at && now()->gt($product->auction_end_at)) {
             try {
                 $admin = \App\Models\User::role('admin')->first();
                 $auctionService->settleAuction($product, $admin);

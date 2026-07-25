@@ -30,24 +30,34 @@ class AuctionManagementController extends Controller
     {
         abort_unless($product->is_auction, 404);
 
-        if (in_array($product->auction_status, ['live', 'pending']) && $product->auction_end_at && now()->gt($product->auction_end_at)) {
+        if (in_array($product->auction_status, ['live', 'pending', 'ended'])
+            && $product->auction_end_at
+            && now()->gt($product->auction_end_at)
+        ) {
             try {
                 $admin = \App\Models\User::role('admin')->first();
                 app(AuctionService::class)->settleAuction($product, $admin);
-                $product->refresh();
             } catch (\Throwable $e) {
-                $product->update(['auction_status' => 'ended']);
+                report($e);
             }
+            $product->refresh();
         }
 
         $product->load([
             'seller:id,name,email',
             'bids' => fn($q) => $q->orderByDesc('amount'),
-            'bids.user:id,name',
+            'bids.user:id,name,email',
             'images:id,product_id,image_path,is_primary',
         ]);
 
-        return Inertia::render('Admin/Auctions/Show', compact('product'));
+        $winner = $product->bids->first()?->user ?? null;
+
+        $order = \App\Models\Order::whereHas('items', fn($q) => $q->where('product_id', $product->id))
+            ->with(['user:id,name,email', 'address'])
+            ->latest()
+            ->first();
+
+        return Inertia::render('Admin/Auctions/Show', compact('product', 'winner', 'order'));
     }
 
     public function update(Request $request, Product $product)

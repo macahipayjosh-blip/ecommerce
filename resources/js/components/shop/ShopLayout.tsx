@@ -163,6 +163,7 @@ function InlineEdit({ value, onSave, className, dark = false }: { value: string;
 interface Settings {
     site_name: string;
     site_tagline: string;
+    site_logo: string;
     footer_brand: string;
     footer_tagline: string;
     footer_col2_title: string;
@@ -239,7 +240,10 @@ export default function ShopLayout({ children, activeNav = 'home', onSearch, sea
                 {/* Sidebar Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-[#2d6a2d] px-5 py-4">
                     <div className="flex items-center gap-2">
-                        <Leaf className="h-6 w-6 text-[#4a9e4a]" />
+                        {settings?.site_logo
+                            ? <img src={`/storage/${settings.site_logo}`} alt={siteName} className="h-6 w-6 object-contain" />
+                            : <Leaf className="h-6 w-6 text-[#4a9e4a]" />
+                        }
                         <span className="text-lg font-bold">{settings?.site_name ?? 'BSABShop'}</span>
                     </div>
                     <button onClick={() => setMobileOpen(false)} className="rounded p-1 transition-colors hover:bg-[#2d6a2d]">
@@ -306,7 +310,10 @@ export default function ShopLayout({ children, activeNav = 'home', onSearch, sea
                         <Menu className="h-5 w-5 text-[#2d6a2d]" />
                     </button>
                     <Link href={route('home')} className="flex shrink-0 items-center gap-2">
-                        <Leaf className="h-8 w-8 text-[#2d6a2d]" />
+                        {settings?.site_logo
+                            ? <img src={`/storage/${settings.site_logo}`} alt={siteName} className="h-8 w-8 object-contain" />
+                            : <Leaf className="h-8 w-8 text-[#2d6a2d]" />
+                        }
                         {isSuperAdmin && onSaveField ? (
                             <InlineEdit value={siteName} onSave={save('site_name')} className="text-xl font-bold text-[#2d6a2d]" />
                         ) : (
@@ -368,7 +375,10 @@ export default function ShopLayout({ children, activeNav = 'home', onSearch, sea
                 <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 text-sm sm:grid-cols-4">
                     <div>
                         <div className="mb-3 flex items-center gap-2">
-                            <Leaf className="h-5 w-5 text-[#4a9e4a]" />
+                            {settings?.site_logo
+                                ? <img src={`/storage/${settings.site_logo}`} alt={siteName} className="h-5 w-5 object-contain" />
+                                : <Leaf className="h-5 w-5 text-[#4a9e4a]" />
+                            }
                             <p className="font-bold text-white">
                                 {isSuperAdmin && onSaveField ? (
                                     <InlineEdit
