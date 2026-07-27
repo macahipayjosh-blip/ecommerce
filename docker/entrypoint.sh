@@ -46,6 +46,10 @@ overwrite_env QUEUE_CONNECTION "$QUEUE_CONNECTION"
 # Storage link
 php artisan storage:link --force 2>/dev/null || true
 
+# Cache config and routes for performance
+php artisan config:cache || true
+php artisan route:cache || true
+
 # Run migrations
 php artisan migrate --force || true
 

@@ -17,6 +17,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN php artisan ziggy:generate --guard web 2>/dev/null || true
 RUN npm run build
 
 # ── Stage 2: PHP runtime ──────────────────────────────────────────────────────
