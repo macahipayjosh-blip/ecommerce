@@ -742,36 +742,6 @@ export default function AppShell({ children, breadcrumb, nav, roleLabel, accentC
                                         <Link href={route('profile.show')} className="ap-hdr-drop-item" onClick={() => setDropOpen(false)}>
                                             <User size={15} /> My Account
                                         </Link>
-                                        <div className="ap-hdr-drop-sep" />
-
-                                        {roleLabel === 'Seller' && (
-                                            <>
-                                                <Link
-                                                    href={route('role.switch')}
-                                                    method="post"
-                                                    as="button"
-                                                    data={{ role: 'customer' }}
-                                                    className="ap-hdr-drop-item"
-                                                    onClick={() => setDropOpen(false)}
-                                                >
-                                                    <svg
-                                                        width="15"
-                                                        height="15"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    >
-                                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                                        <polyline points="9 22 9 12 15 12 15 22" />
-                                                    </svg>
-                                                    Switch to Customer
-                                                </Link>
-                                                <div className="ap-hdr-drop-sep" />
-                                            </>
-                                        )}
 
                                         <Link
                                             href={route('logout')}
