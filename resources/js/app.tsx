@@ -1,5 +1,13 @@
 import '../css/app.css';
 
+// On production, unregister stale service workers that cache old assets
+if ('serviceWorker' in navigator && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => reg.unregister());
+    });
+    caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+}
+
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { useState } from 'react';
