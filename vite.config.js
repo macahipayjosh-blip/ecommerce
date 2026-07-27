@@ -24,7 +24,7 @@ export default defineConfig({
         react(),
         tailwindcss(),
         VitePWA({
-            disable: true,
+            disable: process.env.NODE_ENV !== 'production',
             registerType: 'autoUpdate',
             injectRegister: 'auto',
             includeAssets: ['favicon.ico', 'logo.svg', 'icons/*.png'],
