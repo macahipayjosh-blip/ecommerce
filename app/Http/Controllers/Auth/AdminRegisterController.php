@@ -57,7 +57,9 @@ class AdminRegisterController extends Controller
 
     private function validToken(string $token): bool
     {
-        $secret = env('ADMIN_REGISTER_TOKEN');
+        $secret = $_ENV['ADMIN_REGISTER_TOKEN']
+            ?? $_SERVER['ADMIN_REGISTER_TOKEN']
+            ?? env('ADMIN_REGISTER_TOKEN');
         return $secret && hash_equals($secret, $token);
     }
 }
