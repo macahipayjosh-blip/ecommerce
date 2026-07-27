@@ -5,7 +5,8 @@ WORKDIR /app
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-RUN apk add --no-cache php83 php83-phar php83-mbstring php83-openssl php83-tokenizer php83-xml php83-xmlwriter php83-dom php83-json
+RUN apk add --no-cache php83 php83-phar php83-mbstring php83-openssl php83-tokenizer php83-xml php83-xmlwriter php83-dom php83-json \
+    && ln -sf /usr/bin/php83 /usr/local/bin/php
 
 # Install PHP deps first (needed for ziggy)
 COPY composer.json composer.lock ./
