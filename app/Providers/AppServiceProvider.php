@@ -14,9 +14,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (app()->environment('production') && (isset($_ENV['RAILWAY_ENVIRONMENT']) || isset($_SERVER['RAILWAY_ENVIRONMENT']))) {
+        if (app()->environment('production')) {
             URL::forceScheme('https');
             URL::forceRootUrl(config('app.url'));
+            $this->app['request']->server->set('HTTPS', 'on');
         }
 
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Order::class, \App\Policies\OrderPolicy::class);

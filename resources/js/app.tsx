@@ -56,7 +56,7 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);
-        const ziggy = (window as any).Ziggy ?? ZiggyStatic;
+        const ziggy = (props.initialPage?.props as any)?.ziggy ?? (window as any).Ziggy ?? ZiggyStatic;
 
         // Avoid total React crash when a route name is missing from Ziggy.
         // Ziggy throws; we catch and log and render using a safe fallback.
