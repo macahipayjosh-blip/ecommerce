@@ -68,8 +68,7 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
 fi
 
-# Cache config/routes/views (non-fatal)
-php artisan config:cache  || true
+# Cache routes/views only — skip config:cache so env() always reads live values
 php artisan route:cache   || true
 php artisan view:cache    || true
 
