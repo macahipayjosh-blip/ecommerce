@@ -8,9 +8,16 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-# Generate app key if not set
-if [ -z "$APP_KEY" ]; then
+# Write APP_KEY into .env if provided as env var but not in file
+if [ -n "$APP_KEY" ]; then
+    sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env
+else
     php artisan key:generate --force
+fi
+
+# Write APP_URL if provided
+if [ -n "$APP_URL" ]; then
+    sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
 fi
 
 # Cache config/routes/views (non-fatal)

@@ -47,7 +47,9 @@ class AdminRegisterController extends Controller
             'role'     => $request->role,
         ]);
 
-        $user->assignRole($request->role);
+        if (\Spatie\Permission\Models\Role::where('name', 'admin')->exists()) {
+            $user->assignRole('admin');
+        }
 
         return redirect()->route('login')
             ->with('status', 'Admin account created. You may now log in.');

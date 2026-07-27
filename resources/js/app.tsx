@@ -16,7 +16,9 @@ declare global {
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 const PROTECTED = ['/dashboard', '/admin', '/seller', '/rider', '/customer', '/profile'];
-const isProtected = (url: string) => PROTECTED.some((p) => url.startsWith(p));
+const UNPROTECTED = ['/admin/register'];
+const isProtected = (url: string) =>
+    !UNPROTECTED.some((p) => url.startsWith(p)) && PROTECTED.some((p) => url.startsWith(p));
 
 // Intercept every Inertia navigation (including back button)
 router.on('navigate', (event) => {

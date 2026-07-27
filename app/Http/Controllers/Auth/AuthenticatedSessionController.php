@@ -23,7 +23,7 @@ class AuthenticatedSessionController extends Controller
         return Inertia::render('auth/login', [
             'canResetPassword'  => Route::has('password.request'),
             'status'            => $request->session()->get('status'),
-            'adminRegisterUrl'  => $token ? route('admin.register', $token) : null,
+            'adminRegisterUrl'  => $token ? route('admin.register.create', $token) : null,
         ]);
     }
 

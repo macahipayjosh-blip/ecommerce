@@ -17,6 +17,6 @@
       Psy\Exception\ParseErrorException::fromParseError(Object(PhpParser\Error))
 
   2   vendor\psy\psysh\src\CodeCleaner.php:273
-      Psy\CodeCleaner::parse("<?php $req = Illuminate\Http\Request::create('/admin/register/super-secret-admin-token-change-me', 'GET'); $kernel = app('Illuminate\Contracts\Http\Kernel'); $resp = $kernel->handle($req); preg_match('/"component":"(["]+)"/', $resp-, $m); echo 'Component: '.($m[1] ?? 'none').PHP_EOL; preg_match('/"status":(\d+)/', $resp-, $m2); echo 'Error status: '.($m2[1] ?? 'none');
+      Psy\CodeCleaner::parse("<?php $req = Illuminate\Http\Request::create('/admin/register/super-secret-admin-token-change-me', 'GET'); $resp = app('Illuminate\Contracts\Http\Kernel')->handle($req); echo 'HTTP: '.$resp->getStatusCode().PHP_EOL; preg_match('/"component":"(["]+)"/', $resp-, $m); echo 'Component: '.($m[1] ?? 'NONE').PHP_EOL; if($resp- === 302) echo 'Redirect to: '.$resp-;
 ")
 

@@ -13,11 +13,6 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    // ─── Private Admin Registration (token-protected) ─────────────────────────
-    Route::get('admin/register/{token}', [AdminRegisterController::class, 'create'])
-        ->name('admin.register');
-    Route::post('admin/register/{token}', [AdminRegisterController::class, 'store']);
-
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
@@ -43,6 +38,12 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
 });
+
+// ─── Private Admin Registration (token-protected) ─────────────────────────
+Route::get('admin/register/{token}', [AdminRegisterController::class, 'create'])
+    ->name('admin.register.create');
+Route::post('admin/register/{token}', [AdminRegisterController::class, 'store'])
+    ->name('admin.register.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)

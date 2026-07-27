@@ -35,7 +35,7 @@ export default function AdminRegister({ token }: { token: string }) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('admin.register', token), {
+        post(route('admin.register.store', token), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
@@ -168,7 +168,7 @@ export default function AdminRegister({ token }: { token: string }) {
                                 </div>
 
                                 {/* Role — hidden, always admin */}
-                                <input type="hidden" value="admin" />
+                                <input type="hidden" name="role" value={data.role} onChange={() => {}} />
 
                                 {/* Password */}
                                 <div>

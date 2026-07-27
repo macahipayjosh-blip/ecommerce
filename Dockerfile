@@ -71,6 +71,7 @@ RUN chown -R www-data:www-data /var/www/html \
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 # Supervisor config
+RUN mkdir -p /etc/supervisor/conf.d
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Entrypoint

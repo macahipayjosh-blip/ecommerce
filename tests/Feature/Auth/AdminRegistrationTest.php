@@ -17,13 +17,13 @@ class AdminRegistrationTest extends TestCase
 
     public function test_admin_register_page_renders_with_valid_token()
     {
-        $this->get(route('admin.register', $this->token))
+        $this->get(route('admin.register.create', $this->token))
             ->assertStatus(200);
     }
 
     public function test_admin_register_page_is_forbidden_with_invalid_token()
     {
-        $this->get(route('admin.register', 'wrong-token'))
+        $this->get(route('admin.register.create', 'wrong-token'))
             ->assertStatus(403);
     }
 
@@ -31,13 +31,13 @@ class AdminRegistrationTest extends TestCase
     {
         config(['auth.admin_register_token' => null]);
 
-        $this->get(route('admin.register', 'anything'))
+        $this->get(route('admin.register.create', 'anything'))
             ->assertStatus(403);
     }
 
     public function test_admin_can_be_created_with_valid_token()
     {
-        $this->post(route('admin.register', $this->token), [
+        $this->post(route('admin.register.store', $this->token), [
             'first_name'            => 'Jane',
             'last_name'             => 'Doe',
             'email'                 => 'jane@example.com',
@@ -53,7 +53,7 @@ class AdminRegistrationTest extends TestCase
 
     public function test_super_admin_can_be_created_with_valid_token()
     {
-        $this->post(route('admin.register', $this->token), [
+        $this->post(route('admin.register.store', $this->token), [
             'first_name'            => 'Super',
             'last_name'             => 'Admin',
             'email'                 => 'super@example.com',
@@ -69,7 +69,7 @@ class AdminRegistrationTest extends TestCase
 
     public function test_admin_creation_fails_with_invalid_token()
     {
-        $this->post(route('admin.register', 'bad-token'), [
+        $this->post(route('admin.register.store', 'bad-token'), [
             'first_name'            => 'Jane',
             'last_name'             => 'Doe',
             'email'                 => 'jane@example.com',
@@ -83,7 +83,7 @@ class AdminRegistrationTest extends TestCase
 
     public function test_admin_creation_requires_all_fields()
     {
-        $this->post(route('admin.register', $this->token), [])
+        $this->post(route('admin.register.store', $this->token), [])
             ->assertSessionHasErrors(['first_name', 'last_name', 'email', 'password', 'role']);
     }
 
@@ -91,7 +91,7 @@ class AdminRegistrationTest extends TestCase
     {
         User::factory()->create(['email' => 'taken@example.com']);
 
-        $this->post(route('admin.register', $this->token), [
+        $this->post(route('admin.register.store', $this->token), [
             'first_name'            => 'Jane',
             'last_name'             => 'Doe',
             'email'                 => 'taken@example.com',
@@ -103,7 +103,7 @@ class AdminRegistrationTest extends TestCase
 
     public function test_admin_creation_rejects_non_admin_roles()
     {
-        $this->post(route('admin.register', $this->token), [
+        $this->post(route('admin.register.store', $this->token), [
             'first_name'            => 'Jane',
             'last_name'             => 'Doe',
             'email'                 => 'jane@example.com',
@@ -115,7 +115,7 @@ class AdminRegistrationTest extends TestCase
 
     public function test_admin_is_not_auto_logged_in_after_registration()
     {
-        $this->post(route('admin.register', $this->token), [
+        $this->post(route('admin.register.store', $this->token), [
             'first_name'            => 'Jane',
             'last_name'             => 'Doe',
             'email'                 => 'jane@example.com',
@@ -132,7 +132,7 @@ class AdminRegistrationTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('admin.register', $this->token))
+            ->get(route('admin.register.create', $this->token))
             ->assertRedirect(route('dashboard'));
     }
 }
