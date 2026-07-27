@@ -38,6 +38,10 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
+            return redirect()->route('dashboard');
+        }
+
         if ($user->hasRole('seller') || $user->hasRole('vendor')) {
             $request->session()->put('active_role', 'seller');
         }
