@@ -1,12 +1,5 @@
 import '../css/app.css';
 
-// Unregister any stale service workers (e.g. from old production deployment)
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((reg) => reg.unregister());
-    });
-}
-
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { useState } from 'react';
@@ -74,8 +67,10 @@ createInertiaApp({
             const [ready, setReady] = useState(false);
             return (
                 <>
-                    {!ready && <SplashScreen onDone={() => setReady(true)} siteLogo={siteLogo} />}
-                    <App {...props} />
+                    {!ready
+                        ? <SplashScreen onDone={() => setReady(true)} siteLogo={siteLogo} />
+                        : <App {...props} />
+                    }
                 </>
             );
         }
