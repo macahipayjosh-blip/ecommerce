@@ -17,7 +17,6 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
             URL::forceRootUrl(config('app.url'));
-            $this->app['request']->server->set('HTTPS', 'on');
         }
 
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Order::class, \App\Policies\OrderPolicy::class);
