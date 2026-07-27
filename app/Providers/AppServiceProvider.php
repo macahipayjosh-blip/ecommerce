@@ -23,15 +23,19 @@ class AppServiceProvider extends ServiceProvider
 
         // Share unread message count for sellers
         Inertia::share('unreadMessages', function () {
-            $user = auth()->user();
-            if (!$user || !$user->hasAnyRole(['seller', 'vendor'])) return 0;
+            try {
+                $user = auth()->user();
+                if (!$user || !$user->hasAnyRole(['seller', 'vendor'])) return 0;
 
-            $productIds = Product::where('vendor_id', $user->id)->pluck('id');
+                $productIds = Product::where('vendor_id', $user->id)->pluck('id');
 
-            return ProductMessage::whereIn('product_id', $productIds)
-                ->where('receiver_id', $user->id)
-                ->whereNull('read_at')
-                ->count();
+                return ProductMessage::whereIn('product_id', $productIds)
+                    ->where('receiver_id', $user->id)
+                    ->whereNull('read_at')
+                    ->count();
+            } catch (\Throwable) {
+                return 0;
+            }
         });
     }
 }

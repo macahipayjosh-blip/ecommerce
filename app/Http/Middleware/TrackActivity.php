@@ -50,27 +50,31 @@ class TrackActivity
 
     private function record(Request $request): void
     {
-        $method = $request->method();
-        $path   = $request->path();
+        try {
+            $method = $request->method();
+            $path   = $request->path();
 
-        $action = match ($method) {
-            'GET'    => 'visited ' . $path,
-            'POST'   => 'created via ' . $path,
-            'PUT',
-            'PATCH'  => 'updated via ' . $path,
-            'DELETE' => 'deleted via ' . $path,
-            default  => $method . ' ' . $path,
-        };
+            $action = match ($method) {
+                'GET'    => 'visited ' . $path,
+                'POST'   => 'created via ' . $path,
+                'PUT',
+                'PATCH'  => 'updated via ' . $path,
+                'DELETE' => 'deleted via ' . $path,
+                default  => $method . ' ' . $path,
+            };
 
-        SystemLog::create([
-            'user_id'    => auth()->id(),
-            'action'     => $action,
-            'model_type' => null,
-            'model_id'   => null,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'url'        => $request->fullUrl(),
-            'method'     => $method,
-        ]);
+            SystemLog::create([
+                'user_id'    => auth()->id(),
+                'action'     => $action,
+                'model_type' => null,
+                'model_id'   => null,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'url'        => $request->fullUrl(),
+                'method'     => $method,
+            ]);
+        } catch (\Throwable) {
+            // Never let activity logging crash the request
+        }
     }
 }
