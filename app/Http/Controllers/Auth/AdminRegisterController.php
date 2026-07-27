@@ -37,19 +37,17 @@ class AdminRegisterController extends Controller
             'last_name'  => 'required|string|max:255',
             'email'      => 'required|email|lowercase|max:255|unique:users,email',
             'password'   => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'       => 'required|in:admin',
         ]);
 
         $user = User::create([
             'name'     => trim($request->first_name . ' ' . $request->last_name),
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'role'     => 'admin',
         ]);
 
-        if (\Spatie\Permission\Models\Role::where('name', 'admin')->exists()) {
-            $user->assignRole('admin');
-        }
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $user->assignRole('admin');
 
         return redirect()->route('login')
             ->with('status', 'Admin account created. You may now log in.');

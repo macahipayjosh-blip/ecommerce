@@ -12,7 +12,7 @@ interface AdminRegisterForm {
 }
 
 const field = (err?: string) =>
-    `w-full rounded-lg border text-sm focus:outline-none focus:ring-2 transition-all ${err ? 'border-red-400 bg-red-50' : 'border-[#b8d890] bg-[#f4faea]'}`;
+    `w-full rounded-lg border text-sm text-black focus:outline-none focus:ring-2 transition-all ${err ? 'border-red-400 bg-red-50' : 'border-[#b8d890] bg-[#f4faea]'}`;
 
 const Label = ({ children }: { children: React.ReactNode }) => (
     <label className="block text-xs font-semibold tracking-wider uppercase mb-1.5" style={{ color: '#4a7a4a' }}>
