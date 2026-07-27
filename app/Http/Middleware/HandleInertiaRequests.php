@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -39,7 +38,7 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
             ],
             'site_logo' => fn () => Setting::get('site_logo', ''),
-            'ziggy' => fn () => array_merge((new Ziggy)->toArray(), ['location' => $request->url()]),
+            'ziggy' => fn () => array_merge((new \Tighten\Ziggy\Ziggy)->toArray(), ['location' => $request->url()]),
         ]);
     }
 }
