@@ -123,14 +123,4 @@ return [
     */
     'admin_register_token' => env('ADMIN_REGISTER_TOKEN'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Rider Registration Token
-    |--------------------------------------------------------------------------
-    | A secret token required to access the private rider registration page.
-    | Set RIDER_REGISTER_TOKEN in your .env to a long random string.
-    |
-    */
-    'rider_register_token' => env('RIDER_REGISTER_TOKEN'),
-
 ];

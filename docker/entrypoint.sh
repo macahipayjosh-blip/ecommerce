@@ -15,10 +15,21 @@ else
     php artisan key:generate --force
 fi
 
-# Write APP_URL if provided
-if [ -n "$APP_URL" ]; then
-    sed -i "s|^APP_URL=.*|APP_URL=${APP_URL}|" .env
-fi
+# Inject all critical env vars from Railway environment into .env
+for VAR in APP_URL APP_ENV APP_DEBUG \
+           DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD \
+           SESSION_DRIVER CACHE_STORE QUEUE_CONNECTION \
+           MAIL_MAILER MAIL_HOST MAIL_PORT MAIL_USERNAME MAIL_PASSWORD MAIL_ENCRYPTION MAIL_FROM_ADDRESS \
+           ADMIN_REGISTER_TOKEN; do
+    eval VAL=\$$VAR
+    if [ -n "$VAL" ]; then
+        if grep -q "^${VAR}=" .env; then
+            sed -i "s|^${VAR}=.*|${VAR}=${VAL}|" .env
+        else
+            echo "${VAR}=${VAL}" >> .env
+        fi
+    fi
+done
 
 # Cache config/routes/views (non-fatal)
 php artisan config:cache  || true
